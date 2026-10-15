@@ -21,20 +21,40 @@ export function required(name) {
   return v;
 }
 
-/** OpenRouter chat completion; returns the first choice's message. */
-export async function openrouter(body) {
-  const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
-    method: 'POST',
-    headers: {
-      Authorization: `Bearer ${required('OPENROUTER_API_KEY')}`,
-      'Content-Type': 'application/json',
-      'X-Title': 'przeprogramowani-insta-stories',
-    },
-    body: JSON.stringify(body),
-  });
-  const json = await res.json();
-  if (!res.ok) throw new Error(`OpenRouter ${res.status}: ${JSON.stringify(json.error ?? json)}`);
-  const message = json.choices?.[0]?.message;
-  if (!message) throw new Error(`OpenRouter returned no message: ${JSON.stringify(json).slice(0, 500)}`);
-  return message;
+/**
+ * OpenRouter chat completion; returns the first choice's message. Image generations take ~1 min and
+ * the connection occasionally drops mid-response (undici: "terminated"), so retry network errors,
+ * 429 and 5xx.
+ */
+export async function openrouter(body, { attempts = 3 } = {}) {
+  for (let i = 1; ; i++) {
+    try {
+      const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${required('OPENROUTER_API_KEY')}`,
+          'Content-Type': 'application/json',
+          'X-Title': 'przeprogramowani-insta-stories',
+        },
+        body: JSON.stringify(body),
+        signal: AbortSignal.timeout(180_000),
+      });
+      const json = await res.json();
+      if (!res.ok) {
+        const err = new Error(`OpenRouter ${res.status}: ${JSON.stringify(json.error ?? json)}`);
+        err.retryable = res.status === 429 || res.status >= 500;
+        throw err;
+      }
+      const message = json.choices?.[0]?.message;
+      if (!message) throw Object.assign(new Error(`OpenRouter returned no message: ${JSON.stringify(json).slice(0, 500)}`), { retryable: true });
+      return message;
+    } catch (e) {
+      // fetch/body errors (TypeError "terminated"/"fetch failed", timeouts) have no `retryable` flag.
+      const retryable = e.retryable ?? true;
+      const detail = e.cause ? `${e.message} (${e.cause.code ?? e.cause.message ?? e.cause})` : e.message;
+      if (!retryable || i >= attempts) throw new Error(`${body.model}: ${detail}`);
+      console.warn(`OpenRouter attempt ${i}/${attempts} failed: ${detail} — retrying`);
+      await new Promise((r) => setTimeout(r, 5000 * i));
+    }
+  }
 }
