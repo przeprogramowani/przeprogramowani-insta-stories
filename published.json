@@ -21,5 +21,28 @@
       "mediaId": "17989500432117823",
       "at": "2026-10-15T20:06:34.574Z"
     }
+  ],
+  "opanuj-ai": [
+    {
+      "id": "mailerlite:201106592068798297",
+      "title": "🔍 Masowa automatyzacja nie zwalnia Cię z myślenia",
+      "file": "stories/opanuj-ai/2026-10-15-masowa-automatyzacja-nie-zwalnia-cie-z-myslenia.jpg",
+      "leads": [
+        {
+          "title": "AI nie zdejmie myślenia",
+          "text": "Co zostaje po stronie człowieka, gdy agent przepisuje kod bez czytania? Analiza kosztów jednej decyzji."
+        },
+        {
+          "title": "Multi-agent bez chaosu",
+          "text": "Dlaczego czat dla ludzi nie ogarnia pracy wielu agentów i jak rozdzielić rozmowę na kanały."
+        },
+        {
+          "title": "Pewność modelu to nie trafność",
+          "text": "Jak prosty model decyzyjny pokazuje, że LLM może się mylić z pełnym przekonaniem."
+        }
+      ],
+      "mediaId": "18110763236524449",
+      "at": "2026-10-15T20:31:23.835Z"
+    }
   ]
 }
