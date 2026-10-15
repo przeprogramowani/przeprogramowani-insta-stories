@@ -1,4 +1,4 @@
-import { latestFromRss } from './sources/rss.mjs';
+import { latestFromSubstack } from './sources/substack.mjs';
 import { latestFromMailerlite } from './sources/mailerlite.mjs';
 
 /**
@@ -9,7 +9,7 @@ import { latestFromMailerlite } from './sources/mailerlite.mjs';
 export const NEWSLETTERS = {
   przeprogramowani: {
     name: 'Przeprogramowany Newsletter',
-    latest: () => latestFromRss({ url: 'https://przeprogramowani.substack.com/feed.xml' }),
+    latest: () => latestFromSubstack({ host: 'przeprogramowani.substack.com' }),
     brand: {
       headline: ['Przeprogramowany', 'Newsletter'],
       url: 'przeprogramowani.pl/newsletter',

@@ -1,10 +1,10 @@
 import { XMLParser } from 'fast-xml-parser';
+import { fetchText } from '../http.mjs';
 
 /** Latest item of an RSS feed (Substack puts the full post in content:encoded). */
 export async function latestFromRss({ url }) {
-  const res = await fetch(url);
-  if (!res.ok) throw new Error(`Feed ${url}: ${res.status}`);
-  const xml = new XMLParser({ ignoreAttributes: false, attributeNamePrefix: '' }).parse(await res.text());
+  const text = await fetchText(url, { accept: 'application/rss+xml, application/xml;q=0.9, */*;q=0.8' });
+  const xml = new XMLParser({ ignoreAttributes: false, attributeNamePrefix: '' }).parse(text);
   const items = [xml.rss?.channel?.item ?? []].flat();
   if (!items.length) throw new Error('Feed has no items');
   const it = items

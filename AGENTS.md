@@ -22,7 +22,7 @@ GitHub Action: commit image ─▶ raw.githubusercontent.com URL ─▶ publishS
 | Path | Responsibility |
 |---|---|
 | `src/newsletters.mjs` | **The only per-newsletter place**: source, `brand` (headline lines, URL, badge/accent colours), editorial `voice` for the lead writer, which IG account env var to post with. |
-| `src/sources/rss.mjs`, `src/sources/mailerlite.mjs` | Return the latest issue as `{ id, title, subtitle, link, text, publishedAt }`. `text` is the full issue as plain text — the lead writer depends on it. `id` must be stable (dedupe key). |
+| `src/sources/substack.mjs` (RSS → JSON API fallback), `rss.mjs`, `mailerlite.mjs`; `src/http.mjs` (browser-like fetch + retries) | Return the latest issue as `{ id, title, subtitle, link, text, publishedAt }`. `text` is the full issue as plain text — the lead writer depends on it. `id` must be stable (dedupe key). |
 | `src/leads.mjs` | Text model (`TEXT_MODEL`, default `openai/gpt-5.4-mini`) → exactly 3 `{ title ≤40, text ≤140 chars }` in Polish, JSON mode. |
 | `src/background.mjs` | Image model (`IMAGE_MODEL`, default `openai/gpt-5.4-image-2`) → dark tech/space 9:16 background, **no text**. |
 | `src/layout.mjs` | The template: "NOWE WYDANIE" badge, header band (headline + URL), "W tym wydaniu:" pill, 3 lead cards. Satori + bundled fonts in `assets/fonts/`. |
