@@ -1,3 +1,4 @@
 node_modules/
 .env
 stories/*/.pending.json
+relay/.wrangler/

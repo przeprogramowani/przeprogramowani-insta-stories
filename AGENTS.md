@@ -28,6 +28,7 @@ GitHub Action: commit image ─▶ raw.githubusercontent.com URL ─▶ publishS
 | `src/layout.mjs` | The template: "NOWE WYDANIE" badge, header band (headline + URL), "W tym wydaniu:" pill, 3 lead cards. Satori + bundled fonts in `assets/fonts/`. |
 | `src/instagram.mjs` | Graph API: create `STORIES` container from a public JPEG URL → poll → `media_publish`. |
 | `src/cli.mjs` | `generate <newsletter>` / `publish <newsletter> <url>`; writes `stories/<key>/<date>-<slug>.jpg` + `.pending.json`; records published issues in `published.json`. |
+| `relay/` | Cloudflare Worker (`przeprogramowani-feed-relay`, account <private>) relaying allow-listed feeds — Substack serves GitHub runners a Cloudflare challenge. Deploy: `cd relay && npx wrangler@latest deploy` (Node 22). |
 | `.github/workflows/story.yml` | Reusable pipeline (gate → generate → artifact → commit → publish → record). |
 | `.github/workflows/<key>.yml` | Thin schedule + manual-dispatch callers, one per newsletter. |
 

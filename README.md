@@ -11,7 +11,7 @@ Weekly Instagram Stories for our newsletters, generated and published from GitHu
 
 ## How it works
 
-1. **Latest issue** — `src/sources/` (RSS or MailerLite), picked per newsletter in `src/newsletters.mjs`.
+1. **Latest issue** — `src/sources/` (Substack or MailerLite), picked per newsletter in `src/newsletters.mjs`. Substack blocks GitHub runners, so its feed is read through the Cloudflare Worker in `relay/`.
 2. **Leads** — a text model (`openai/gpt-5.4-mini` via OpenRouter) writes 3 short Polish leads from the full issue.
 3. **Background** — an image model (`openai/gpt-5.4-image-2` via OpenRouter) generates a text-free dark tech/space 9:16 background.
 4. **Layout** — `src/layout.mjs` draws the template (badge, header + URL, "W tym wydaniu:", 3 cards) with Satori/resvg and bundled fonts, so Polish text is always exact. Output: 1080×1920 JPEG.
