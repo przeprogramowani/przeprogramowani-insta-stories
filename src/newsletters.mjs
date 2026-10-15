@@ -17,9 +17,14 @@ export const NEWSLETTERS = {
     brand: {
       headline: ['Przeprogramowany', 'Newsletter'],
       url: 'przeprogramowani.pl/newsletter',
+      // Red-ish identity.
       badge: '#e53935',
-      urlColor: '#cfe0ff',
-      accent: 'rgba(140, 170, 255, 0.28)',
+      panel: 'rgba(28, 8, 12, 0.84)',
+      accent: 'rgba(255, 99, 99, 0.38)',
+      urlColor: '#ffc9c9',
+      bodyText: '#f6e6e6',
+      backgroundStyle:
+        'near-black with deep crimson, burgundy and dark red tones, glowing red and warm orange circuit traces and grid lines, ember-like particles, a faint red nebula haze',
     },
     voice: 'Przeprogramowany Newsletter (Przeprogramowani: Przemek Smyrdek i Marcin Czarkowski) — programowanie, AI i branża IT',
     instagramUserIdEnv: 'INSTAGRAM_USER_ID',
@@ -30,9 +35,14 @@ export const NEWSLETTERS = {
     brand: {
       headline: ['Opanuj.AI', 'Newsletter'],
       url: 'opanuj.ai/newsletter',
-      badge: '#6d28d9',
-      urlColor: '#c7d2fe',
-      accent: 'rgba(129, 140, 248, 0.32)',
+      // Blue-ish identity (opanuj.ai primary #1e40af).
+      badge: '#1e40af',
+      panel: 'rgba(6, 14, 36, 0.84)',
+      accent: 'rgba(96, 165, 250, 0.40)',
+      urlColor: '#bfdbfe',
+      bodyText: '#e3ecfb',
+      backgroundStyle:
+        'near-black with deep navy, royal and electric blue tones, glowing cyan and blue circuit traces and grid lines, small stars, a faint blue nebula haze',
     },
     voice: 'Newsletter Opanuj.AI (Przemek Smyrdek i Marcin Czarkowski) — najlepsze zasoby o AI dla programistów',
     // Defaults to the same account; set OPANUJ_AI_INSTAGRAM_USER_ID to post to a separate one.

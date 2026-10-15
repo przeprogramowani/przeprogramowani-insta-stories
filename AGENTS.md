@@ -21,13 +21,13 @@ GitHub Action: commit image ─▶ raw.githubusercontent.com URL ─▶ publishS
 
 | Path | Responsibility |
 |---|---|
-| `src/newsletters.mjs` | **The only per-newsletter place**: source, `brand` (headline lines, URL, badge/accent colours), editorial `voice` for the lead writer, which IG account env var to post with. |
+| `src/newsletters.mjs` | **The only per-newsletter place**: source, `brand` (headline lines, URL, palette: badge/panel/accent/URL/body-text colours and the background prompt's `backgroundStyle` — Przeprogramowani is red, Opanuj.AI blue), editorial `voice` for the lead writer, which IG account env var to post with. |
 | `src/sources/substack.mjs` (RSS → JSON API fallback), `rss.mjs`, `mailerlite.mjs`; `src/http.mjs` (browser-like fetch + retries) | Return the latest issue as `{ id, title, subtitle, link, text, publishedAt }`. `text` is the full issue as plain text — the lead writer depends on it. `id` must be stable (dedupe key). |
 | `src/leads.mjs` | Text model (`TEXT_MODEL`, default `openai/gpt-5.4-mini`) → exactly 3 `{ title ≤40, text ≤140 chars }` in Polish, JSON mode. |
 | `src/background.mjs` | Image model (`IMAGE_MODEL`, default `openai/gpt-5.4-image-2`) → dark tech/space 9:16 background, **no text**. |
 | `src/layout.mjs` | The template: "NOWE WYDANIE" badge, header band (headline + URL), "W tym wydaniu:" pill, 3 lead cards. Satori + bundled fonts in `assets/fonts/`. |
 | `src/instagram.mjs` | Graph API: create `STORIES` container from a public JPEG URL → poll → `media_publish`. |
-| `src/cache.mjs` | Per-issue cache of the paid steps (`leads.json`, `background.png`) in `.cache/<newsletter>/<issue-hash>/`, persisted across runs with `actions/cache` (restore newest `story-<newsletter>-*`, save under the run id, even on failure). Only the current issue is kept. `FRESH=1` / the `fresh` input bypasses it. |
+| `src/cache.mjs` | Per-issue cache of the paid steps (`leads.json`, `background.png`) in `.cache/<newsletter>/<issue-hash>/`, persisted across runs with `actions/cache` (restore newest `story-<newsletter>-*`, save under the run id, even on failure). Only the current issue is kept. The background file is keyed by a hash of `brand.backgroundStyle`, so palette changes regenerate automatically. `FRESH=1` / the `fresh` input bypasses it. |
 | `src/cli.mjs` | `generate <newsletter>` / `publish <newsletter> <url>`; writes `stories/<key>/<date>-<slug>.jpg` + `.pending.json`; records published issues in `published.json`. |
 | `relay/` | Cloudflare Worker (`przeprogramowani-feed-relay`, account <private>) relaying allow-listed feeds — Substack serves GitHub runners a Cloudflare challenge. Deploy: `cd relay && npx wrangler@latest deploy` (Node 22). |
 | `.github/workflows/story.yml` | Reusable pipeline (gate → generate → artifact → commit → publish → record). |

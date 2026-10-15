@@ -14,10 +14,10 @@ const FONTS = [
 // Tiny hyperscript helper so the layout reads like markup without a JSX build step.
 const h = (type, style, ...children) => ({ type, props: { style, children: children.flat() } });
 
-const PANEL = 'rgba(14, 16, 30, 0.82)';
 
 /** Template layout (badge, header band, "W tym wydaniu:", 3 lead cards) over the background, branded per newsletter. */
 export function storyTree(backgroundPng, leads, brand) {
+  const PANEL = brand.panel;
   const BORDER = `1.5px solid ${brand.accent}`;
   const bg = `data:image/png;base64,${backgroundPng.toString('base64')}`;
 
@@ -56,7 +56,7 @@ export function storyTree(backgroundPng, leads, brand) {
           'div',
           { display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '26px 34px 30px', borderRadius: 20, background: PANEL, border: BORDER, textAlign: 'center' },
           h('div', { fontWeight: 700, fontSize: 44, lineHeight: 1.2 }, l.title),
-          h('div', { fontWeight: 400, fontSize: 35, lineHeight: 1.35, marginTop: 12, color: '#e4e8f5' }, l.text),
+          h('div', { fontWeight: 400, fontSize: 35, lineHeight: 1.35, marginTop: 12, color: brand.bodyText }, l.text),
         ),
       ),
     ),
