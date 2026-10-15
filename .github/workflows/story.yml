@@ -1,0 +1,90 @@
+# Reusable pipeline: generate the Story for one newsletter, commit the image, publish it to Instagram.
+name: Story pipeline
+
+on:
+  workflow_call:
+    inputs:
+      newsletter: { type: string, required: true }
+      local_hour: { type: string, default: '09', description: 'Europe/Warsaw hour a scheduled run must land on' }
+      dry_run: { type: boolean, default: false }
+      force: { type: boolean, default: false }
+    secrets:
+      OPENROUTER_API_KEY: { required: true }
+      META_ACCESS_TOKEN: { required: true }
+      INSTAGRAM_USER_ID: { required: true }
+      MAILERLITE_API_KEY: { required: false }
+      OPANUJ_AI_INSTAGRAM_USER_ID: { required: false }
+
+permissions:
+  contents: write
+
+jobs:
+  story:
+    runs-on: ubuntu-latest
+    concurrency: { group: story-push, cancel-in-progress: false }
+    steps:
+      # Two UTC crons cover CET/CEST; only the one landing on the local hour proceeds.
+      - name: Gate on Warsaw time
+        id: gate
+        run: |
+          hour=$(TZ=Europe/Warsaw date +%H)
+          if [ "${{ github.event_name }}" = "schedule" ] && [ "$hour" != "${{ inputs.local_hour }}" ]; then
+            echo "Warsaw hour is $hour, not ${{ inputs.local_hour }} — skipping this cron slot."
+            echo "run=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "run=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - uses: actions/checkout@v4
+        if: steps.gate.outputs.run == 'true'
+
+      - uses: actions/setup-node@v4
+        if: steps.gate.outputs.run == 'true'
+        with: { node-version-file: .nvmrc, cache: npm }
+
+      - run: npm ci
+        if: steps.gate.outputs.run == 'true'
+
+      - name: Generate Story image
+        id: gen
+        if: steps.gate.outputs.run == 'true'
+        run: node src/cli.mjs generate ${{ inputs.newsletter }}
+        env:
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+          MAILERLITE_API_KEY: ${{ secrets.MAILERLITE_API_KEY }}
+          FORCE: ${{ inputs.force && '1' || '' }}
+
+      - name: Attach image to the run
+        if: steps.gen.outputs.skip == 'false'
+        uses: actions/upload-artifact@v4
+        with: { name: 'story-${{ inputs.newsletter }}', path: '${{ steps.gen.outputs.file }}' }
+
+      - name: Commit image (Instagram fetches it from a public URL)
+        id: commit
+        if: steps.gen.outputs.skip == 'false' && !inputs.dry_run
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add "${{ steps.gen.outputs.file }}"
+          git commit -m "story(${{ inputs.newsletter }}): add ${{ steps.gen.outputs.file }}"
+          git pull --rebase && git push
+          echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+
+      - name: Publish to Instagram Stories
+        if: steps.commit.outcome == 'success'
+        run: |
+          url="https://raw.githubusercontent.com/${{ github.repository }}/${{ steps.commit.outputs.sha }}/${{ steps.gen.outputs.file }}"
+          # raw.githubusercontent.com can lag a few seconds behind a push.
+          for i in 1 2 3 4 5 6; do curl -sfI "$url" >/dev/null && break; sleep 5; done
+          node src/cli.mjs publish ${{ inputs.newsletter }} "$url"
+        env:
+          META_ACCESS_TOKEN: ${{ secrets.META_ACCESS_TOKEN }}
+          INSTAGRAM_USER_ID: ${{ secrets.INSTAGRAM_USER_ID }}
+          OPANUJ_AI_INSTAGRAM_USER_ID: ${{ secrets.OPANUJ_AI_INSTAGRAM_USER_ID }}
+
+      - name: Record published Story
+        if: steps.commit.outcome == 'success'
+        run: |
+          git add published.json
+          git commit -m "story(${{ inputs.newsletter }}): published ${{ steps.gen.outputs.file }}"
+          git pull --rebase && git push

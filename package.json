@@ -1,0 +1,20 @@
+{
+  "name": "przeprogramowani-insta-stories",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Every Sunday: render a 9:16 Instagram Story for the latest Przeprogramowani Substack post and publish it.",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "generate": "node src/cli.mjs generate",
+    "publish": "node src/cli.mjs publish"
+  },
+  "dependencies": {
+    "@resvg/resvg-js": "^2.6.2",
+    "fast-xml-parser": "^5.11.2",
+    "satori": "^0.60.0",
+    "sharp": "^0.35.5"
+  }
+}
