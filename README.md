@@ -17,6 +17,8 @@ Weekly Instagram Stories for our newsletters, generated and published from GitHu
 4. **Layout** — `src/layout.mjs` draws the template (badge, header + URL, "W tym wydaniu:", 3 cards) with Satori/resvg and bundled fonts, so Polish text is always exact. Output: 1080×1920 JPEG.
 5. **Publish** — the Action commits the image; Instagram's Graph API fetches it from `raw.githubusercontent.com` (repo must stay public) and posts it as a Story. `published.json` prevents posting the same issue twice.
 
+Leads and background are **cached per issue** (`actions/cache`): a retry or the real run after a dry run reuses them instead of paying again, and posts exactly the image you previewed. Tick `fresh` to generate a new version.
+
 Adding a newsletter = one entry in `src/newsletters.mjs` (source, headline, URL, colours, voice) + a 20-line caller workflow.
 
 ## Setup
@@ -35,7 +37,7 @@ The Meta token's data access must be re-confirmed every 90 days (next: ~<date>) 
 
 ## Running
 
-- **Manually in GitHub:** Actions → pick the newsletter workflow → *Run workflow*. `dry_run` (default on for manual runs) only generates the image and attaches it to the run.
+- **Manually in GitHub:** Actions → pick the newsletter workflow → *Run workflow*. `dry_run` (default on for manual runs) only generates the image and attaches it to the run; `fresh` regenerates leads/background instead of reusing the cached ones.
 - **Locally** (Node 22, `.env` with the secrets above):
 
   ```bash

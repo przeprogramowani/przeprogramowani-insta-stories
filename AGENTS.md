@@ -27,6 +27,7 @@ GitHub Action: commit image ─▶ raw.githubusercontent.com URL ─▶ publishS
 | `src/background.mjs` | Image model (`IMAGE_MODEL`, default `openai/gpt-5.4-image-2`) → dark tech/space 9:16 background, **no text**. |
 | `src/layout.mjs` | The template: "NOWE WYDANIE" badge, header band (headline + URL), "W tym wydaniu:" pill, 3 lead cards. Satori + bundled fonts in `assets/fonts/`. |
 | `src/instagram.mjs` | Graph API: create `STORIES` container from a public JPEG URL → poll → `media_publish`. |
+| `src/cache.mjs` | Per-issue cache of the paid steps (`leads.json`, `background.png`) in `.cache/<newsletter>/<issue-hash>/`, persisted across runs with `actions/cache` (restore newest `story-<newsletter>-*`, save under the run id, even on failure). Only the current issue is kept. `FRESH=1` / the `fresh` input bypasses it. |
 | `src/cli.mjs` | `generate <newsletter>` / `publish <newsletter> <url>`; writes `stories/<key>/<date>-<slug>.jpg` + `.pending.json`; records published issues in `published.json`. |
 | `relay/` | Cloudflare Worker (`przeprogramowani-feed-relay`, account <private>) relaying allow-listed feeds — Substack serves GitHub runners a Cloudflare challenge. Deploy: `cd relay && npx wrangler@latest deploy` (Node 22). |
 | `.github/workflows/story.yml` | Reusable pipeline (gate → generate → artifact → commit → publish → record). |
@@ -46,6 +47,9 @@ GitHub Action: commit image ─▶ raw.githubusercontent.com URL ─▶ publishS
 - **DST-proof schedule:** each caller has two UTC crons (07:00 and 08:00); the pipeline's gate step
   only lets the one landing on 09:00 Warsaw through. Keep both crons when changing times.
 - **Manual runs default to `dry_run`** (image attached as an artifact, nothing posted).
+- **Pay once per issue.** Leads and background are cached per issue, so retries and the real run
+  after a dry run reuse them — the dry-run preview is exactly what gets posted. Only the layout is
+  re-rendered (free), so layout changes apply without new AI calls. Use `fresh` for a new take.
 
 ## Adding or changing a newsletter
 
