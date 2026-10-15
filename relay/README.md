@@ -3,10 +3,15 @@
 Substack serves a Cloudflare challenge to GitHub Actions IPs, so the pipeline fetches feeds via this
 Worker: `GET /feeds/<key>.xml` → allow-listed upstream feed, cached for 1 hour.
 
-Deploy (Cloudflare account <private>):
+Requests must send `Authorization: Bearer <token>`; anything else gets 404, so the Worker can't be
+used by others to burn its request quota.
+
+Deploy:
 
 ```bash
-cd relay && npx wrangler@latest deploy
+cd relay
+npx wrangler@latest secret put RELAY_TOKEN   # same value as the FEED_RELAY_TOKEN GitHub secret
+npx wrangler@latest deploy
 ```
 
 Add a feed: extend `FEEDS` in `src/index.js`, redeploy, then point the newsletter's source at

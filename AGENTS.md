@@ -5,7 +5,7 @@ Publishes one Instagram Story per newsletter issue, every week, from GitHub Acti
 | Key | Newsletter | Source | Schedule (Europe/Warsaw) |
 |---|---|---|---|
 | `przeprogramowani` | Przeprogramowany Newsletter | Substack RSS `przeprogramowani.substack.com/feed.xml` | Sunday 09:00 |
-| `opanuj-ai` | Opanuj.AI Newsletter | MailerLite campaigns containing "Opanuj.AI" (same selection as opanuj.ai/newsletter in `<private>`) | Tuesday 09:00 |
+| `opanuj-ai` | Opanuj.AI Newsletter | MailerLite campaigns containing "Opanuj.AI" (same selection as opanuj.ai/newsletter) | Tuesday 09:00 |
 
 Plain Node 22 ESM (`.mjs`), no build step, no framework. Dependencies: `sharp`, `satori`,
 `@resvg/resvg-js`, `fast-xml-parser`. User-facing setup is in `README.md`.
@@ -29,7 +29,7 @@ GitHub Action: commit image ─▶ raw.githubusercontent.com URL ─▶ publishS
 | `src/instagram.mjs` | Graph API: create `STORIES` container from a public JPEG URL → poll → `media_publish`. |
 | `src/cache.mjs` | Per-issue cache of the paid steps (`leads.json`, `background.png`) in `.cache/<newsletter>/<issue-hash>/`, persisted across runs with `actions/cache` (restore newest `story-<newsletter>-*`, save under the run id, even on failure). Only the current issue is kept. The background file is keyed by a hash of `brand.backgroundStyle`, so palette changes regenerate automatically. `FRESH=1` / the `fresh` input bypasses it. |
 | `src/cli.mjs` | `generate <newsletter>` / `publish <newsletter> <url>`; writes `stories/<key>/<date>-<slug>.jpg` + `.pending.json`; records published issues in `published.json`. |
-| `relay/` | Cloudflare Worker (`przeprogramowani-feed-relay`, account <private>) relaying allow-listed feeds — Substack serves GitHub runners a Cloudflare challenge. Deploy: `cd relay && npx wrangler@latest deploy` (Node 22). |
+| `relay/` | Cloudflare Worker relaying allow-listed feeds — Substack serves GitHub runners a Cloudflare challenge. Requires `Authorization: Bearer <FEED_RELAY_TOKEN>` (Worker secret `RELAY_TOKEN`). Deploy: `cd relay && npx wrangler@latest deploy` (Node 22). |
 | `.github/workflows/story.yml` | Reusable pipeline (gate → generate → artifact → commit → publish → record). |
 | `.github/workflows/<key>.yml` | Thin schedule + manual-dispatch callers, one per newsletter. |
 
@@ -83,16 +83,14 @@ export PATH=~/.nvm/versions/node/v22.22.0/bin:$PATH
 ## Secrets — rules for agents
 
 - Local `.env` (gitignored) and GitHub repository secrets use the same names: `OPENROUTER_API_KEY`,
-  `META_ACCESS_TOKEN`, `INSTAGRAM_USER_ID`, `MAILERLITE_API_KEY`, optional
+  `META_ACCESS_TOKEN`, `INSTAGRAM_USER_ID`, `MAILERLITE_API_KEY`, `FEED_RELAY_TOKEN`, optional
   `OPANUJ_AI_INSTAGRAM_USER_ID`.
 - **Never print secret values.** Check presence by length; redact tokens in output.
 - The user pastes secrets and runs `gh secret set -f .env --repo przeprogramowani/przeprogramowani-insta-stories`.
-- `META_ACCESS_TOKEN` is the non-expiring Meta **Page** token (app "<private>") shared
-  with the <private> `<private>`, which owns `<private>` for
-  regenerating it. Meta's data-access window must be renewed every 90 days (next ≈ <date>);
-  after regenerating, update this repo's GitHub secret too.
-- The `<private>` in `<private>` local `.env` files is a placeholder —
-  the real key comes from the user.
+- `META_ACCESS_TOKEN` is a non-expiring Meta **Page** token. Meta's data-access window must be
+  renewed every 90 days; after regenerating, update this repo's GitHub secret too.
+- **This repo is public.** Account names, emails, local paths, other repos and renewal dates belong
+  in `CLAUDE.local.md` (gitignored), never in tracked files, commit messages or workflow logs.
 - Posting a Story is public and can't be silently undone: never trigger a non-dry run without the
   user's go-ahead.
 

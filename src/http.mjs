@@ -6,10 +6,10 @@ const HEADERS = {
   'Accept-Language': 'pl,en;q=0.8',
 };
 
-export async function fetchText(url, { accept = '*/*', attempts = 3 } = {}) {
+export async function fetchText(url, { accept = '*/*', attempts = 3, headers = {} } = {}) {
   let last;
   for (let i = 1; i <= attempts; i++) {
-    const res = await fetch(url, { headers: { ...HEADERS, Accept: accept } });
+    const res = await fetch(url, { headers: { ...HEADERS, Accept: accept, ...headers } });
     const body = await res.text();
     if (res.ok) return body;
     last = `${url}: ${res.status} ${body.replace(/\s+/g, ' ').slice(0, 160)}`;

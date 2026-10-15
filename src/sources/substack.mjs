@@ -3,13 +3,18 @@ import { fetchJson } from '../http.mjs';
 
 /**
  * Latest Substack post. Substack challenges GitHub Actions IPs, so try in order:
- * our Cloudflare relay (relay/), the feed directly, then Substack's JSON API.
+ * our Cloudflare relay (relay/, needs FEED_RELAY_TOKEN), the feed directly, then Substack's JSON API.
  * Same output shape as other sources.
  */
 export async function latestFromSubstack({ host, relayUrl }) {
-  for (const url of [relayUrl, `https://${host}/feed.xml`].filter(Boolean)) {
+  const token = process.env.FEED_RELAY_TOKEN;
+  const feeds = [
+    relayUrl && token && { url: relayUrl, headers: { Authorization: `Bearer ${token}` } },
+    { url: `https://${host}/feed.xml` },
+  ].filter(Boolean);
+  for (const feed of feeds) {
     try {
-      return await latestFromRss({ url });
+      return await latestFromRss(feed);
     } catch (e) {
       console.warn(`Feed failed (${e.message})`);
     }

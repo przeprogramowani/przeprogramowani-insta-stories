@@ -14,6 +14,7 @@ on:
       META_ACCESS_TOKEN: { required: true }
       INSTAGRAM_USER_ID: { required: true }
       MAILERLITE_API_KEY: { required: false }
+      FEED_RELAY_TOKEN: { required: false }
       OPANUJ_AI_INSTAGRAM_USER_ID: { required: false }
 
 permissions:
@@ -63,6 +64,7 @@ jobs:
         env:
           OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
           MAILERLITE_API_KEY: ${{ secrets.MAILERLITE_API_KEY }}
+          FEED_RELAY_TOKEN: ${{ secrets.FEED_RELAY_TOKEN }}
           FORCE: ${{ inputs.force && '1' || '' }}
           FRESH: ${{ inputs.fresh && '1' || '' }}
 

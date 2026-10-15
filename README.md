@@ -28,12 +28,13 @@ Repository secrets (Settings → Secrets and variables → Actions):
 | Secret | What |
 |---|---|
 | `OPENROUTER_API_KEY` | OpenRouter key |
-| `META_ACCESS_TOKEN` | Non-expiring Meta **Page** token with `instagram_content_publish` (Meta app "<private>") |
+| `META_ACCESS_TOKEN` | Non-expiring Meta **Page** token with `instagram_content_publish` |
 | `INSTAGRAM_USER_ID` | Instagram professional account ID linked to the Page |
 | `MAILERLITE_API_KEY` | MailerLite API key (Opanuj.AI source) |
+| `FEED_RELAY_TOKEN` | Shared token for the feed relay (same value as the Worker's `RELAY_TOKEN` secret) |
 | `OPANUJ_AI_INSTAGRAM_USER_ID` | Optional — post Opanuj.AI Stories to a different IG account |
 
-The Meta token's data access must be re-confirmed every 90 days (next: ~<date>) — regenerate it via the <private>'s `<private>`.
+The Meta token's data access must be re-confirmed every 90 days; after regenerating it, update the secret.
 
 ## Running
 

@@ -5,7 +5,7 @@ const API = 'https://connect.mailerlite.com/api';
 
 /**
  * Latest sent MailerLite campaign matching the newsletter — same selection as opanuj.ai/newsletter
- * (<private>: sent + regular campaigns whose name/subject contains `titleFilter`).
+ * (sent + regular campaigns whose name/subject contains `titleFilter`).
  */
 export async function latestFromMailerlite({ titleFilter, exclude = [] }) {
   const params = new URLSearchParams({ 'filter[status]': 'sent', 'filter[type]': 'regular', limit: '25' });
