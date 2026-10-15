@@ -4,8 +4,8 @@ Publishes one Instagram Story per newsletter issue, every week, from GitHub Acti
 
 | Key | Newsletter | Source | Schedule (Europe/Warsaw) |
 |---|---|---|---|
-| `przeprogramowani` | Przeprogramowany Newsletter | Substack RSS `przeprogramowani.substack.com/feed.xml` | Sunday 09:00 |
-| `opanuj-ai` | Opanuj.AI Newsletter | MailerLite campaigns containing "Opanuj.AI" (same selection as opanuj.ai/newsletter) | Tuesday 09:00 |
+| `przeprogramowani` | Przeprogramowany Newsletter | Substack RSS `przeprogramowani.substack.com/feed.xml` | Sunday 09:00 (10:00 in summer) |
+| `opanuj-ai` | Opanuj.AI Newsletter | MailerLite campaigns containing "Opanuj.AI" (same selection as opanuj.ai/newsletter) | Tuesday 09:00 (10:00 in summer) |
 
 Plain Node 22 ESM (`.mjs`), no build step, no framework. Dependencies: `sharp`, `satori`,
 `@resvg/resvg-js`, `fast-xml-parser`. User-facing setup is in `README.md`.
@@ -30,7 +30,7 @@ GitHub Action: commit image ─▶ raw.githubusercontent.com URL ─▶ publishS
 | `src/cache.mjs` | Per-issue cache of the paid steps (`leads.json`, `background.png`) in `.cache/<newsletter>/<issue-hash>/`, persisted across runs with `actions/cache` (restore newest `story-<newsletter>-*`, save under the run id, even on failure). Only the current issue is kept. The background file is keyed by a hash of `brand.backgroundStyle`, so palette changes regenerate automatically. `FRESH=1` / the `fresh` input bypasses it. |
 | `src/cli.mjs` | `generate <newsletter>` / `publish <newsletter> <url>`; writes `stories/<key>/<date>-<slug>.jpg` + `.pending.json`; records published issues in `published.json`. |
 | `relay/` | Cloudflare Worker relaying allow-listed feeds — Substack serves GitHub runners a Cloudflare challenge. Requires `Authorization: Bearer <FEED_RELAY_TOKEN>` (Worker secret `RELAY_TOKEN`). Deploy: `cd relay && npx wrangler@latest deploy` (Node 22). |
-| `.github/workflows/story.yml` | Reusable pipeline (gate → generate → artifact → commit → publish → record). |
+| `.github/workflows/story.yml` | Reusable pipeline (generate → artifact → commit → publish → record). |
 | `.github/workflows/<key>.yml` | Thin schedule + manual-dispatch callers, one per newsletter. |
 
 ## Design decisions — keep them unless the user asks otherwise
@@ -44,8 +44,8 @@ GitHub Action: commit image ─▶ raw.githubusercontent.com URL ─▶ publishS
   and the repo must stay **public**. Use the commit-SHA raw URL (immutable), not `main`.
 - **One Story per issue.** `published.json` is the dedupe log; `FORCE=1` / the `force` input
   overrides it. Generated images stay in git history on purpose (they're the hosting).
-- **DST-proof schedule:** each caller has two UTC crons (07:00 and 08:00); the pipeline's gate step
-  only lets the one landing on 09:00 Warsaw through. Keep both crons when changing times.
+- **One UTC cron per newsletter** (08:00 UTC): GitHub crons have no time zone, so the local time
+  shifts by an hour with DST (09:00 Warsaw in winter, 10:00 in summer). That's accepted on purpose.
 - **Manual runs default to `dry_run`** (image attached as an artifact, nothing posted).
 - **Pay once per issue.** Leads and background are cached per issue, so retries and the real run
   after a dry run reuse them — the dry-run preview is exactly what gets posted. Only the layout is
@@ -102,7 +102,7 @@ export PATH=~/.nvm/versions/node/v22.22.0/bin:$PATH
   - `Graph … (#190)` / `OAuthException` → Meta token invalid or data access lapsed → regenerate.
   - `Container ERROR` → Instagram couldn't fetch/accept the image (must be JPEG, 9:16, public URL).
   - `MailerLite 401` → wrong key; `No sent MailerLite campaign matching` → naming changed.
-- **Run "succeeded" but nothing posted** → the gate skipped (wrong local hour) or the issue was
+- **Run "succeeded" but nothing posted** → the issue was
   already in `published.json` (`skip=true` in the generate step).
 - **Leads complain about missing content** → the source returned a stub. MailerLite's `plain_text` is only the "can't display HTML" notice; the issue is `emails[0].content` from `GET /campaigns/{id}`. `writeLeads` refuses texts under 500 chars and model replies with `{"error"}`.
 - **Lead quality drifts** → tune the prompt in `src/leads.mjs` (rules are in Polish on purpose) or

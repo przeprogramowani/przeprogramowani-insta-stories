@@ -2,8 +2,7 @@ name: Przeprogramowany Newsletter Story
 
 on:
   schedule:
-    # Sunday 09:00 Europe/Warsaw = 07:00 UTC (CEST) / 08:00 UTC (CET); the pipeline gates on local time.
-    - cron: '0 7 * * 0'
+    # Sunday 08:00 UTC = 09:00 Europe/Warsaw in winter (CET), 10:00 in summer (CEST).
     - cron: '0 8 * * 0'
   workflow_dispatch:
     inputs:

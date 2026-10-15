@@ -4,8 +4,8 @@ Weekly Instagram Stories for our newsletters, generated and published from GitHu
 
 | Newsletter | Source | When (Europe/Warsaw) | Workflow |
 |---|---|---|---|
-| Przeprogramowany Newsletter | Substack RSS (`przeprogramowani.substack.com/feed.xml`) | Sunday 09:00 | `przeprogramowani.yml` |
-| Opanuj.AI Newsletter | MailerLite campaigns (same selection as opanuj.ai/newsletter) | Tuesday 09:00 | `opanuj-ai.yml` |
+| Przeprogramowany Newsletter | Substack RSS (`przeprogramowani.substack.com/feed.xml`) | Sunday 09:00 (10:00 in summer) | `przeprogramowani.yml` |
+| Opanuj.AI Newsletter | MailerLite campaigns (same selection as opanuj.ai/newsletter) | Tuesday 09:00 (10:00 in summer) | `opanuj-ai.yml` |
 
 ![Example](examples/przeprogramowani.jpg)
 

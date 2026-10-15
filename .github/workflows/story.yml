@@ -5,7 +5,6 @@ on:
   workflow_call:
     inputs:
       newsletter: { type: string, required: true }
-      local_hour: { type: string, default: '09', description: 'Europe/Warsaw hour a scheduled run must land on' }
       dry_run: { type: boolean, default: false }
       force: { type: boolean, default: false }
       fresh: { type: boolean, default: false, description: 'Ignore cached leads/background and generate new ones' }
@@ -25,32 +24,16 @@ jobs:
     runs-on: ubuntu-latest
     concurrency: { group: story-push, cancel-in-progress: false }
     steps:
-      # Two UTC crons cover CET/CEST; only the one landing on the local hour proceeds.
-      - name: Gate on Warsaw time
-        id: gate
-        run: |
-          hour=$(TZ=Europe/Warsaw date +%H)
-          if [ "${{ github.event_name }}" = "schedule" ] && [ "$hour" != "${{ inputs.local_hour }}" ]; then
-            echo "Warsaw hour is $hour, not ${{ inputs.local_hour }} — skipping this cron slot."
-            echo "run=false" >> "$GITHUB_OUTPUT"
-          else
-            echo "run=true" >> "$GITHUB_OUTPUT"
-          fi
-
       - uses: actions/checkout@v7
-        if: steps.gate.outputs.run == 'true'
 
       - uses: actions/setup-node@v7
-        if: steps.gate.outputs.run == 'true'
         with: { node-version-file: .nvmrc, cache: npm }
 
       - run: npm ci
-        if: steps.gate.outputs.run == 'true'
 
       # Leads + background are cached per issue (src/cache.mjs). Caches are immutable, so each run
       # saves under its own key and the next run restores the newest one for this newsletter.
       - name: Restore generation cache
-        if: steps.gate.outputs.run == 'true'
         uses: actions/cache/restore@v6
         with:
           path: .cache
@@ -59,7 +42,6 @@ jobs:
 
       - name: Generate Story image
         id: gen
-        if: steps.gate.outputs.run == 'true'
         run: node src/cli.mjs generate ${{ inputs.newsletter }}
         env:
           OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
@@ -70,7 +52,7 @@ jobs:
 
       # Saved even when generation fails, so a retry doesn't pay again for what already succeeded.
       - name: Save generation cache
-        if: always() && steps.gate.outputs.run == 'true' && hashFiles('.cache/**') != ''
+        if: always() && hashFiles('.cache/**') != ''
         uses: actions/cache/save@v6
         with:
           path: .cache
