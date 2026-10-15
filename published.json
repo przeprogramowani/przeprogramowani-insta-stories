@@ -1,0 +1,25 @@
+{
+  "przeprogramowani": [
+    {
+      "id": "https://przeprogramowani.substack.com/p/co-aczy-jaskiniowcow-i-boeinga-tokeny",
+      "title": "Co łączy jaskiniowców i Boeinga? Tokeny!",
+      "file": "stories/przeprogramowani/2026-10-15-co-laczy-jaskiniowcow-i-boeinga-tokeny.jpg",
+      "leads": [
+        {
+          "title": "Tokeny pod lupą: 3 testy",
+          "text": "Jak Caveman, STE i RTK tną koszt o 10–14% i gdzie zaczynają się potknięcia? Wyniki testu na 10xDevs."
+        },
+        {
+          "title": "Le Chonk od Mistrala",
+          "text": "Mistral pokazuje Large 4: bilion parametrów, trening na 3800 GPU i wyniki lepsze od DeepSeek V4 Pro i Qwen 3.8 Max."
+        },
+        {
+          "title": "Matematyka 2.0 nadchodzi",
+          "text": "Terence Tao ostrzega, że AI rozwiązuje problemy szybciej niż nauka je trawi. Co to zmienia w publikacjach i awansach?"
+        }
+      ],
+      "mediaId": "17989500432117823",
+      "at": "2026-10-15T20:06:34.574Z"
+    }
+  ]
+}
