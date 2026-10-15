@@ -8,10 +8,17 @@ Zasady:
 - "text": 1–2 zdania, łącznie maks. 140 znaków, mówi czytelnikowi, czego się dowie / dlaczego warto przeczytać;
 - tylko fakty z wydania, nic nie dopisuj od siebie;
 - kolejność: od najmocniejszego tematu.
-Odpowiedz wyłącznie JSON-em: {"leads":[{"title":"...","text":"..."},{...},{...}]}`;
+Odpowiedz wyłącznie JSON-em: {"leads":[{"title":"...","text":"..."},{...},{...}]}
+Jeśli treść nie zawiera merytorycznych tematów (np. sama stopka lub komunikat techniczny), odpowiedz {"error":"<krótko dlaczego>"}.`;
+
+/** Below this the "issue" is almost certainly a stub, not real content. */
+const MIN_ISSUE_CHARS = 500;
 
 /** Three short Polish leads distilled from the issue by a text model. */
 export async function writeLeads(post, newsletter) {
+  if (post.text.length < MIN_ISSUE_CHARS) {
+    throw new Error(`Issue text too short (${post.text.length} chars) — source returned no real content for "${post.title}"`);
+  }
   const message = await openrouter({
     model: TEXT_MODEL,
     response_format: { type: 'json_object' },
@@ -20,7 +27,9 @@ export async function writeLeads(post, newsletter) {
       { role: 'user', content: `Tytuł: ${post.title}${post.subtitle ? `\nPodtytuł: ${post.subtitle}` : ''}\n\nTreść wydania:\n${post.text.slice(0, 30000)}` },
     ],
   });
-  const leads = JSON.parse(message.content).leads;
+  const parsed = JSON.parse(message.content);
+  if (parsed.error) throw new Error(`Lead writer found no usable content: ${parsed.error}`);
+  const leads = parsed.leads;
   if (!Array.isArray(leads) || leads.length < 3) throw new Error(`Expected 3 leads, got: ${message.content}`);
   return leads.slice(0, 3).map((l) => ({ title: String(l.title).trim(), text: String(l.text).trim() }));
 }

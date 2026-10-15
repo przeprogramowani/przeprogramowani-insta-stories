@@ -102,5 +102,6 @@ export PATH=~/.nvm/versions/node/v22.22.0/bin:$PATH
   - `MailerLite 401` → wrong key; `No sent MailerLite campaign matching` → naming changed.
 - **Run "succeeded" but nothing posted** → the gate skipped (wrong local hour) or the issue was
   already in `published.json` (`skip=true` in the generate step).
+- **Leads complain about missing content** → the source returned a stub. MailerLite's `plain_text` is only the "can't display HTML" notice; the issue is `emails[0].content` from `GET /campaigns/{id}`. `writeLeads` refuses texts under 500 chars and model replies with `{"error"}`.
 - **Lead quality drifts** → tune the prompt in `src/leads.mjs` (rules are in Polish on purpose) or
   the newsletter's `voice`; keep the length limits — the cards are sized for them.

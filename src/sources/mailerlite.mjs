@@ -1,4 +1,5 @@
 import { required } from '../config.mjs';
+import { htmlToText } from './rss.mjs';
 
 const API = 'https://connect.mailerlite.com/api';
 
@@ -8,11 +9,7 @@ const API = 'https://connect.mailerlite.com/api';
  */
 export async function latestFromMailerlite({ titleFilter, exclude = [] }) {
   const params = new URLSearchParams({ 'filter[status]': 'sent', 'filter[type]': 'regular', limit: '25' });
-  const res = await fetch(`${API}/campaigns?${params}`, {
-    headers: { Authorization: `Bearer ${required('MAILERLITE_API_KEY')}`, Accept: 'application/json' },
-  });
-  const body = await res.json();
-  if (!res.ok) throw new Error(`MailerLite ${res.status}: ${JSON.stringify(body).slice(0, 300)}`);
+  const body = await api(`/campaigns?${params}`);
 
   const campaigns = (body.data ?? [])
     .filter((c) => `${c.name} ${c.emails?.[0]?.subject ?? ''}`.toLowerCase().includes(titleFilter.toLowerCase()))
@@ -21,13 +18,24 @@ export async function latestFromMailerlite({ titleFilter, exclude = [] }) {
   const c = campaigns[0];
   if (!c) throw new Error(`No sent MailerLite campaign matching "${titleFilter}"`);
 
-  const email = c.emails?.[0] ?? {};
+  // The list's plain_text is only MailerLite's "your client can't show HTML" stub — the issue itself
+  // is the HTML in the campaign detail.
+  const email = (await api(`/campaigns/${c.id}`)).data?.emails?.[0] ?? {};
   return {
     id: `mailerlite:${c.id}`,
     title: email.subject ?? c.name,
     subtitle: '',
     link: email.preview_url ?? null,
-    text: email.plain_text ?? '',
+    text: htmlToText(email.content ?? ''),
     publishedAt: new Date(c.finished_at ?? c.created_at).toISOString(),
   };
+}
+
+async function api(path) {
+  const res = await fetch(`${API}${path}`, {
+    headers: { Authorization: `Bearer ${required('MAILERLITE_API_KEY')}`, Accept: 'application/json' },
+  });
+  const body = await res.json();
+  if (!res.ok) throw new Error(`MailerLite ${res.status}: ${JSON.stringify(body).slice(0, 300)}`);
+  return body;
 }
