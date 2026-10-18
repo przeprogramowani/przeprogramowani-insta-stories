@@ -10,6 +10,8 @@ if (existsSync('.env')) {
 
 export const IMAGE_MODEL = process.env.IMAGE_MODEL ?? 'openai/gpt-5.4-image-2';
 export const TEXT_MODEL = process.env.TEXT_MODEL ?? 'openai/gpt-5.4-mini';
+// Copy-edit pass (src/copyedit.mjs): short output, so a stronger model costs ~4 cents per issue; mini ignores half the rules.
+export const EDIT_MODEL = process.env.EDIT_MODEL ?? 'anthropic/claude-sonnet-5.5';
 export const GRAPH = 'https://graph.facebook.com/v23.0';
 
 /** Story canvas required by Instagram (9:16). */

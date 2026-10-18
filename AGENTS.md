@@ -13,9 +13,9 @@ Plain Node 22 ESM (`.mjs`), no build step, no framework. Dependencies: `sharp`, 
 ## Pipeline
 
 ```
-newsletter.latest()  ─▶ writeLeads()          ─▶ generateBackground()     ─▶ composeStory()        ─▶ JPEG 1080×1920
-(src/sources/*)        text model, 3 PL leads    image model, no text        Satori layout + fonts
-                                                                                      │
+newsletter.latest()  ─▶ writeLeads()          ─▶ polishLeads()          ─▶ generateBackground()     ─▶ composeStory()        ─▶ JPEG 1080×1920
+(src/sources/*)        text model, 3 PL leads    no-ai-slop copy edit      image model, no text        Satori layout + fonts
+                                                                                                                │
 GitHub Action: commit image ─▶ raw.githubusercontent.com URL ─▶ publishStory() (Graph API) ─▶ published.json
 ```
 
@@ -24,10 +24,12 @@ GitHub Action: commit image ─▶ raw.githubusercontent.com URL ─▶ publishS
 | `src/newsletters.mjs` | **The only per-newsletter place**: source, `brand` (headline lines, URL, palette: badge/panel/accent/URL/body-text colours and the background prompt's `backgroundStyle` — Przeprogramowani is red, Opanuj.AI blue), editorial `voice` for the lead writer, which IG account env var to post with. |
 | `src/sources/substack.mjs` (RSS → JSON API fallback), `rss.mjs`, `mailerlite.mjs`; `src/http.mjs` (browser-like fetch + retries) | Return the latest issue as `{ id, title, subtitle, link, text, publishedAt }`. `text` is the full issue as plain text — the lead writer depends on it. `id` must be stable (dedupe key). |
 | `src/leads.mjs` | Text model (`TEXT_MODEL`, default `openai/gpt-5.4-mini`) → exactly 3 `{ title ≤40, text ≤140 chars }` in Polish, JSON mode. |
+| `src/copyedit.mjs` | Copy-edit pass over the leads (`EDIT_MODEL`, default `anthropic/claude-sonnet-5.5`): system prompt = vendored `.claude/skills/no-ai-slop/{SKILL.md,eval.md}` + a Polish task adapter (common Polish slop patterns, length limits, facts only from the issue). A field that comes back over its limit keeps the draft. Logs the model's "What changed". |
+| `.claude/skills/no-ai-slop/` | Vendored MIT skill (upstream + commit in `SOURCE.md`), used at runtime by `copyedit.mjs` and usable as a Claude Code skill. Update by copying upstream files unchanged; put project rules in `copyedit.mjs`, not the skill. |
 | `src/background.mjs` | Image model (`IMAGE_MODEL`, default `openai/gpt-5.4-image-2`) → dark tech/space 9:16 background, **no text**. |
 | `src/layout.mjs` | The template: "NOWE WYDANIE" badge, header band (headline + URL), "W tym wydaniu:" pill, 3 lead cards. Satori + bundled fonts in `assets/fonts/`. |
 | `src/instagram.mjs` | Graph API: create `STORIES` container from a public JPEG URL → poll → `media_publish`. |
-| `src/cache.mjs` | Per-issue cache of the paid steps (`leads.json`, `background.png`) in `.cache/<newsletter>/<issue-hash>/`, persisted across runs with `actions/cache` (restore newest `story-<newsletter>-*`, save under the run id, even on failure). Only the current issue is kept. The background file is keyed by a hash of `brand.backgroundStyle`, so palette changes regenerate automatically. `FRESH=1` / the `fresh` input bypasses it. |
+| `src/cache.mjs` | Per-issue cache of the paid steps (`leads.json` draft, `leads-edited-<hash>.json`, `background-<hash>.png`) in `.cache/<newsletter>/<issue-hash>/`, persisted across runs with `actions/cache` (restore newest `story-<newsletter>-*`, save under the run id, even on failure). Only the current issue is kept. The background file is keyed by a hash of `brand.backgroundStyle`, so palette changes regenerate automatically; the edited leads by a hash of `EDIT_MODEL` + the editor prompt, so skill/prompt changes re-run only the cheap edit pass. `FRESH=1` / the `fresh` input bypasses it. |
 | `src/cli.mjs` | `generate <newsletter>` / `publish <newsletter> <url>`; writes `stories/<key>/<date>-<slug>.jpg` + `.pending.json`; records published issues in `published.json`. |
 | `relay/` | Cloudflare Worker relaying allow-listed feeds — Substack serves GitHub runners a Cloudflare challenge. Requires `Authorization: Bearer <FEED_RELAY_TOKEN>` (Worker secret `RELAY_TOKEN`). Deploy: `cd relay && npx wrangler@latest deploy` (Node 22). |
 | `.github/workflows/story.yml` | Reusable pipeline (generate → artifact → commit → publish → record). |
@@ -106,4 +108,6 @@ export PATH=~/.nvm/versions/node/v22.22.0/bin:$PATH
   already in `published.json` (`skip=true` in the generate step).
 - **Leads complain about missing content** → the source returned a stub. MailerLite's `plain_text` is only the "can't display HTML" notice; the issue is `emails[0].content` from `GET /campaigns/{id}`. `writeLeads` refuses texts under 500 chars and model replies with `{"error"}`.
 - **Lead quality drifts** → tune the prompt in `src/leads.mjs` (rules are in Polish on purpose) or
-  the newsletter's `voice`; keep the length limits — the cards are sized for them.
+  the newsletter's `voice`; keep the length limits — the cards are sized for them. AI-sounding phrasing
+  that survives → add the Polish pattern to the task adapter in `src/copyedit.mjs` (`gpt-5.4-mini` as
+  editor ignored half the rules, hence the stronger `EDIT_MODEL`).
