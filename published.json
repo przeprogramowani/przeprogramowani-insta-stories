@@ -64,6 +64,27 @@
       ],
       "mediaId": "18110763236524449",
       "at": "2026-10-15T20:31:23.835Z"
+    },
+    {
+      "id": "mailerlite:201832154510919621",
+      "title": "🤔 Jakich wymagań system NIE posiada? Nie pozwól AI podjąć tej decyzji za Ciebie.",
+      "file": "stories/opanuj-ai/2026-10-20-jakich-wymagan-system-nie-posiada-nie-pozwol-ai-po.jpg",
+      "leads": [
+        {
+          "title": "Jakie wymagania odrzucić",
+          "text": "S3, StatsD i SQLite są proste, bo rezygnują z części wymagań. LLM-y bez kontekstu biznesowego wymyślają własne."
+        },
+        {
+          "title": "Jak weryfikować agentów",
+          "text": "Zamknięta pętla weryfikacji poprawia pracę agenta bardziej niż zmiana modelu: testy E2E, biblioteki danych i testy różnicowe."
+        },
+        {
+          "title": "Jak ogarnąć code review",
+          "text": "Zmiana zastępuje pull request: łączy intencję, kod i dowody poprawności. Klasyfikator kieruje ją na jedną z trzech ścieżek przeglądu."
+        }
+      ],
+      "mediaId": "18095604824677783",
+      "at": "2026-10-20T13:08:41.763Z"
     }
   ]
 }
