@@ -41,6 +41,27 @@
       ],
       "mediaId": "18163532578495063",
       "at": "2026-10-18T09:44:33.455Z"
+    },
+    {
+      "id": "https://przeprogramowani.substack.com/p/hordy-agentow-u-bram-twojego-serwera",
+      "title": "🔥 Hordy agentów u bram twojego serwera - nie panikuj!",
+      "file": "stories/przeprogramowani/2026-10-25-hordy-agentow-u-bram-twojego-serwera-nie-panikuj.jpg",
+      "leads": [
+        {
+          "title": "AI przyspiesza ataki",
+          "text": "Od łatki do pierwszych ataków mijało kilka dni, dziś ten czas gwałtownie się kurczy. AI testuje exploity, aż któryś zadziała."
+        },
+        {
+          "title": "Pułapka pewności modelu",
+          "text": "Liczba w polu confidence to tekst wygenerowany przez LLM. Wiarygodna ocena wymaga dwóch warunków, a sam prompt ich nie zapewnia."
+        },
+        {
+          "title": "AI szuka nowych badań",
+          "text": "Badacze z Mila i Instytutu Maxa Plancka wyszukują pomysły spójne naukowo, ale spoza typowych ścieżek ludzkiego myślenia."
+        }
+      ],
+      "mediaId": "17917729551263976",
+      "at": "2026-10-25T13:06:58.791Z"
     }
   ],
   "opanuj-ai": [
