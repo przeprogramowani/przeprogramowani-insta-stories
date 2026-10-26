@@ -19,7 +19,8 @@ reguły do ich polskich odpowiedników. Najczęstsze w polskich leadach, zawsze 
 - kontrast binarny: "To nie X, to Y", "Nie X, tylko Y", "Problemem nie jest X, lecz Y", "Nie wystarczy X. Liczy się Y" → napisz wprost samo Y;
 - metakomentarz i zapowiedzi: "Zobacz, jak…", "Sprawdź, co…", "Dowiesz się…", "O tym, co…", "Przegląd…" → od razu podaj, co konkretnie jest w materiale;
 - puszenie i ogólniki: "Kluczowe:", "Co ważne,", "w dzisiejszym świecie", "rewolucja", "przełom", "game changer", "realne", "sensowne";
-- pytania retoryczne, puenty-aforyzmy, dramatyczne fragmenty zdań, myślniki.
+- pytania retoryczne, puenty-aforyzmy, dramatyczne fragmenty zdań, myślniki;
+- gry słowne, kalambury i neologizmy, zwłaszcza z "AI" ("AI-nowo", "AI-pokalipsa", "zAIskakujące") → zwykłe słowa, np. "Jak ocenić firmę AI-nowo" → "Jak ocenić firmę AI".
 Wykonaj checklistę z eval.md w myślach, zanim odpowiesz, i sprawdź każdy lead osobno pod kątem listy wyżej.
 
 - Zachowaj liczbę i kolejność leadów oraz temat każdego z nich.
