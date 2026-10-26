@@ -1,6 +1,6 @@
 ---
 name: custom-story
-description: Render an ad-hoc 9:16 Instagram Story from a thumbnail (local path or https URL) and a short caption, preview it, and post it to the Przeprogramowani or Opanuj.AI Instagram account right away. Use when the user wants to post a one-off Story with an image and a note, e.g. "wrzuć story z tą miniaturką", "opublikuj relację z dopiskiem", "zrób story z tego obrazka", "post this thumbnail as a Story". Excludes: the weekly newsletter Stories (those run from GitHub Actions via `cli.mjs generate`), feed posts, Reels and video.
+description: Render an ad-hoc 9:16 Instagram Story from a thumbnail (local path, https URL or the macOS clipboard) and a short caption, preview it, and post it to the Przeprogramowani or Opanuj.AI Instagram account right away. Use when the user wants to post a one-off Story with an image and a note, e.g. "wrzuć story z tą miniaturką", "opublikuj relację z dopiskiem", "zrób story z tego obrazka", "mam obrazek w schowku", "post this thumbnail as a Story". Excludes: the weekly newsletter Stories (those run from GitHub Actions via `cli.mjs generate`), feed posts, Reels and video.
 ---
 
 # Custom Story
@@ -20,7 +20,7 @@ approves that preview in this conversation.
 | Input | Rules |
 |---|---|
 | `newsletter` | `przeprogramowani` (red, default) or `opanuj-ai` (blue). Picks the colours and the IG account. Ask only if the context doesn't make it clear. |
-| `image` | Local path (make it absolute) or an `https://` URL. Any format `sharp` reads (JPEG, PNG, WebP…). For YouTube thumbnails, `https://i.ytimg.com/vi/<id>/maxresdefault.jpg` works. |
+| `image` | Local path (make it absolute), an `https://` URL, or the literal `clipboard` when the user says the image is in the clipboard / "skopiowane" / "w schowku". Any format `sharp` reads (JPEG, PNG, WebP…). For YouTube thumbnails, `https://i.ytimg.com/vi/<id>/maxresdefault.jpg` works. |
 | `caption` | Polish unless the user says otherwise, ≤280 chars; 50–120 reads best. `\n` breaks the line. Use the user's wording as-is. If they ask you to write it, draft one and get their OK before rendering. |
 
 ## 2. Preflight
@@ -44,9 +44,15 @@ Quote the caption in **single quotes** so `$`, `!` and backticks stay literal. W
 DRY_RUN=1 node src/cli.mjs custom przeprogramowani /abs/path/thumb.png 'Nowy odcinek już jest!\nLink w bio'
 ```
 
+With `clipboard` it first prints `Clipboard image saved to stories/custom/clipboard-<hash>.png`: a file
+copied in Finder is used as that file, otherwise the clipboard's picture data (PNG, JPEG or TIFF). **Use
+that saved path instead of `clipboard` in step 4**, so the post is exactly the preview even if the
+clipboard changes meanwhile.
+
 It prints `Wrote stories/custom/<date>-<slug>.jpg`. **Read that image** and check that:
 - the caption is complete, the Polish diacritics are right and nothing overflows the panel,
 - the thumbnail isn't cropped badly or too small (a very tall image gets narrow),
+- with `clipboard`: it is the image the user meant (not a file icon or an older copy),
 - nothing important sits above y≈250 or below y≈1700 (Instagram's UI covers those areas).
 
 Show the user the preview path, the account it will go to and the exact caption, then ask for an
@@ -76,3 +82,4 @@ The preview stays in `stories/custom/` (gitignored); delete it if the user decli
 | `Graph … (#190)` / `OAuthException` | The Meta token is invalid or its data access lapsed. The user has to regenerate it; see the Secrets section in `CLAUDE.md`. |
 | `Container ERROR` | Instagram couldn't fetch the image. Check that the printed URL opens. |
 | `Caption is N chars` | Shorten it with the user. |
+| `No image on the clipboard` | Ask the user to copy the image (or the image file in Finder) again. |

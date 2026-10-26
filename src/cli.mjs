@@ -2,14 +2,14 @@
 //   node src/cli.mjs generate <newsletter>        → stories/<newsletter>/<date>-<slug>.jpg (+ .pending.json)
 //   node src/cli.mjs upload <newsletter>          → uploads the pending image to S3, prints its CDN URL
 //   node src/cli.mjs publish <newsletter> [url]   → posts the pending image (uploaded, or served at <url>) as a Story
-//   node src/cli.mjs custom <newsletter> <image> "<caption>"
+//   node src/cli.mjs custom <newsletter> <image|clipboard> "<caption>"
 //                                                 → renders an ad-hoc Story (no AI), uploads it to S3, posts it
 // Env: FORCE=1 regenerates even if the latest issue already had a Story. DRY_RUN=1 makes `custom` render only.
 import { existsSync, readFileSync, writeFileSync, mkdirSync, appendFileSync } from 'node:fs';
 import { getNewsletter } from './newsletters.mjs';
 import { renderStory } from './image.mjs';
 import { publishStory } from './instagram.mjs';
-import { renderCustom } from './custom.mjs';
+import { renderCustom, saveClipboardImage } from './custom.mjs';
 import { hostOnS3 } from './hosting.mjs';
 
 const STATE = 'published.json';
@@ -63,11 +63,15 @@ async function publish(nl, url) {
 
 /** Local, immediate Story: thumbnail + caption, posted with the newsletter's brand colours and IG account. */
 async function custom(nl, image, caption) {
-  if (!image || !caption) throw new Error('custom needs an image (path or URL) and a caption');
+  if (!image || !caption) throw new Error('custom needs an image (path, URL or `clipboard`) and a caption');
   caption = caption.replace(/\\n/g, '\n').trim();
   if (caption.length > 280) throw new Error(`Caption is ${caption.length} chars — keep it under 280 so it fits below the image`);
-  const file = `stories/custom/${new Date().toISOString().slice(0, 10)}-${slug(caption)}.jpg`;
   mkdirSync('stories/custom', { recursive: true });
+  if (image === 'clipboard') {
+    image = await saveClipboardImage();
+    console.log(`Clipboard image saved to ${image} (pass this path when posting)`);
+  }
+  const file = `stories/custom/${new Date().toISOString().slice(0, 10)}-${slug(caption)}.jpg`;
   writeFileSync(file, await renderCustom(image, caption, nl.brand));
   console.log(`Wrote ${file}`);
   if (process.env.DRY_RUN) return;
@@ -83,7 +87,7 @@ try {
   else if (cmd === 'upload') await upload(nl);
   else if (cmd === 'publish') await publish(nl, arg);
   else if (cmd === 'custom') await custom(nl, arg, arg2);
-  else throw new Error('Usage: node src/cli.mjs generate <newsletter> | upload <newsletter> | publish <newsletter> [url] | custom <newsletter> <image> "<caption>"');
+  else throw new Error('Usage: node src/cli.mjs generate <newsletter> | upload <newsletter> | publish <newsletter> [url] | custom <newsletter> <image|clipboard> "<caption>"');
 } catch (e) {
   console.error(e instanceof Error ? e.message : e);
   process.exit(1);
