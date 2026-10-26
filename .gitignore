@@ -4,3 +4,4 @@ stories/*/.pending.json
 relay/.wrangler/
 .cache/
 CLAUDE.local.md
+stories/custom/

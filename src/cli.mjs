@@ -1,11 +1,15 @@
 // Usage (newsletter: przeprogramowani | opanuj-ai):
 //   node src/cli.mjs generate <newsletter>        → stories/<newsletter>/<date>-<slug>.jpg (+ .pending.json)
 //   node src/cli.mjs publish <newsletter> <url>   → posts the pending image (served at <url>) as a Story
-// Env: FORCE=1 regenerates even if the latest issue already had a Story.
+//   node src/cli.mjs custom <newsletter> <image> "<caption>"
+//                                                 → renders an ad-hoc Story (no AI), uploads it to S3, posts it
+// Env: FORCE=1 regenerates even if the latest issue already had a Story. DRY_RUN=1 makes `custom` render only.
 import { existsSync, readFileSync, writeFileSync, mkdirSync, appendFileSync } from 'node:fs';
 import { getNewsletter } from './newsletters.mjs';
 import { renderStory } from './image.mjs';
 import { publishStory } from './instagram.mjs';
+import { renderCustom } from './custom.mjs';
+import { hostOnS3 } from './hosting.mjs';
 
 const STATE = 'published.json';
 const state = existsSync(STATE) ? JSON.parse(readFileSync(STATE, 'utf8')) : {};
@@ -15,7 +19,7 @@ const saveState = () => writeFileSync(STATE, JSON.stringify(state, null, 2) + '\
 const output = (k, v) => process.env.GITHUB_OUTPUT && appendFileSync(process.env.GITHUB_OUTPUT, `${k}=${v}\n`);
 
 const slug = (s) =>
-  s.replace(/ł/g, 'l').replace(/Ł/g, 'L').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 50);
+  s.replace(/ł/g, 'l').replace(/Ł/g, 'L').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').slice(0, 50).replace(/^-|-$/g, '');
 
 const pendingPath = (nl) => `stories/${nl.key}/.pending.json`;
 
@@ -46,12 +50,28 @@ async function publish(nl, url) {
   console.log(`[${nl.key}] Published Story ${mediaId} for "${pending.title}"`);
 }
 
-const [cmd, key, arg] = process.argv.slice(2);
+/** Local, immediate Story: thumbnail + caption, posted with the newsletter's brand colours and IG account. */
+async function custom(nl, image, caption) {
+  if (!image || !caption) throw new Error('custom needs an image (path or URL) and a caption');
+  caption = caption.replace(/\\n/g, '\n').trim();
+  if (caption.length > 280) throw new Error(`Caption is ${caption.length} chars — keep it under 280 so it fits below the image`);
+  const file = `stories/custom/${new Date().toISOString().slice(0, 10)}-${slug(caption)}.jpg`;
+  mkdirSync('stories/custom', { recursive: true });
+  writeFileSync(file, await renderCustom(image, caption, nl.brand));
+  console.log(`Wrote ${file}`);
+  if (process.env.DRY_RUN) return;
+  const url = await hostOnS3(file);
+  const mediaId = await publishStory(url, nl.instagramUserIdEnv);
+  console.log(`[${nl.key}] Published Story ${mediaId} (${url})`);
+}
+
+const [cmd, key, arg, arg2] = process.argv.slice(2);
 try {
   const nl = getNewsletter(key);
   if (cmd === 'generate') await generate(nl);
   else if (cmd === 'publish') await publish(nl, arg);
-  else throw new Error('Usage: node src/cli.mjs generate <newsletter> | publish <newsletter> <url>');
+  else if (cmd === 'custom') await custom(nl, arg, arg2);
+  else throw new Error('Usage: node src/cli.mjs generate <newsletter> | publish <newsletter> <url> | custom <newsletter> <image> "<caption>"');
 } catch (e) {
   console.error(e instanceof Error ? e.message : e);
   process.exit(1);

@@ -9,7 +9,8 @@
   },
   "scripts": {
     "generate": "node src/cli.mjs generate",
-    "publish": "node src/cli.mjs publish"
+    "publish": "node src/cli.mjs publish",
+    "custom": "node src/cli.mjs custom"
   },
   "dependencies": {
     "@resvg/resvg-js": "^2.6.2",

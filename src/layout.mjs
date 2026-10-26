@@ -9,6 +9,7 @@ const FONTS = [
   font('Josefin Sans', 'JosefinSans-SemiBold.ttf', 600),
   font('Inter', 'Inter-Regular.ttf', 400),
   font('Inter', 'Inter-Bold.ttf', 700),
+  font('Unbounded', 'Unbounded-SemiBold.ttf', 600),
 ];
 
 // Tiny hyperscript helper so the layout reads like markup without a JSX build step.
@@ -65,5 +66,45 @@ export function storyTree(backgroundPng, leads, brand) {
 
 export async function composeStory(backgroundPng, leads, brand) {
   const svg = await satori(storyTree(backgroundPng, leads, brand), { width: STORY.width, height: STORY.height, fonts: FONTS });
+  return new Resvg(svg, { fitTo: { mode: 'width', value: STORY.width } }).render().asPng();
+}
+
+/** Ad-hoc Story: the brand logo (if any), the thumbnail as a card over its own blurred copy, and a caption panel below it. */
+export function customTree(backgroundPng, thumb, caption, brand, logo) {
+  const BORDER = `1.5px solid ${brand.accent}`;
+  const bg = `data:image/png;base64,${backgroundPng.toString('base64')}`;
+  // Fit the thumbnail into 960×900 so the caption still fits inside Instagram's safe zone.
+  const scale = Math.min(960 / thumb.width, 900 / thumb.height);
+  // Unbounded runs wide, so these are a step smaller than Inter would need.
+  const bySize = caption.length <= 50 ? 54 : caption.length <= 100 ? 46 : caption.length <= 180 ? 38 : 32;
+  // Explicit line breaks mean "keep each line whole": shrink until the longest line fits the
+  // panel's 880px text width (Unbounded averages ~0.72em per character).
+  const longest = Math.max(...caption.split('\n').map((l) => l.length));
+  const fontSize = caption.includes('\n') ? Math.max(32, Math.min(bySize, Math.floor(880 / (longest * 0.72)))) : bySize;
+
+  return h(
+    'div',
+    // Padding keeps the centred group between Instagram's top bar (~y 230) and reply box (~y 1700).
+    { width: STORY.width, height: STORY.height, boxSizing: 'border-box', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '250px 60px 220px', fontFamily: 'Inter', color: '#fff', backgroundImage: `url(${bg})`, backgroundSize: `${STORY.width}px ${STORY.height}px` },
+    ...(logo ? [{ type: 'img', props: { src: `data:image/png;base64,${logo.png.toString('base64')}`, width: logo.width, height: logo.height, style: { marginBottom: 56 } } }] : []),
+    {
+      type: 'img',
+      props: {
+        src: `data:image/png;base64,${thumb.png.toString('base64')}`,
+        width: Math.round(thumb.width * scale),
+        height: Math.round(thumb.height * scale),
+        style: { borderRadius: 24, border: BORDER, boxShadow: '0 12px 40px rgba(0,0,0,0.55)' },
+      },
+    },
+    h(
+      'div',
+      { marginTop: 48, alignSelf: 'stretch', display: 'flex', justifyContent: 'center', padding: '32px 40px 36px', borderRadius: 20, background: brand.panel, border: BORDER, textAlign: 'center', whiteSpace: 'pre-wrap', fontFamily: 'Unbounded', fontWeight: 600, fontSize, lineHeight: 1.3 },
+      caption,
+    ),
+  );
+}
+
+export async function composeCustom(backgroundPng, thumb, caption, brand, logo) {
+  const svg = await satori(customTree(backgroundPng, thumb, caption, brand, logo), { width: STORY.width, height: STORY.height, fonts: FONTS });
   return new Resvg(svg, { fitTo: { mode: 'width', value: STORY.width } }).render().asPng();
 }

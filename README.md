@@ -48,3 +48,15 @@ The Meta token's data access must be re-confirmed every 90 days; after regenerat
   ```
 
   Publishing needs a public URL for the image, so it's meant to run in Actions.
+
+- **Ad-hoc Story from your machine** — a thumbnail + a caption, posted right away (no AI calls, free):
+
+  ```bash
+  DRY_RUN=1 npm run custom -- przeprogramowani ~/Desktop/thumb.png "Nowy odcinek już jest!"   # preview only
+  npm run custom -- przeprogramowani ~/Desktop/thumb.png "Nowy odcinek już jest!\nLink w bio"  # render, upload, post
+  ```
+
+  The image can be a path or an `https://` URL; `\n` breaks the line and keeps each line whole; max 280
+  chars. The first argument picks the brand colours, the logo and the Instagram account. The Story is
+  rendered to `stories/custom/` (gitignored), uploaded with the aws CLI to S3 (`STORIES_S3_BUCKET`,
+  served at `STORIES_CDN_BASE`), then published. Nothing is committed.

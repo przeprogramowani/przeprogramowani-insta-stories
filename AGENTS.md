@@ -30,7 +30,8 @@ GitHub Action: commit image ─▶ raw.githubusercontent.com URL ─▶ publishS
 | `src/layout.mjs` | The template: "NOWE WYDANIE" badge, header band (headline + URL), "W tym wydaniu:" pill, 3 lead cards. Satori + bundled fonts in `assets/fonts/`. |
 | `src/instagram.mjs` | Graph API: create `STORIES` container from a public JPEG URL → poll → `media_publish`. |
 | `src/cache.mjs` | Per-issue cache of the paid steps (`leads.json` draft, `leads-edited-<hash>.json`, `background-<hash>.png`) in `.cache/<newsletter>/<issue-hash>/`, persisted across runs with `actions/cache` (restore newest `story-<newsletter>-*`, save under the run id, even on failure). Only the current issue is kept. The background file is keyed by a hash of `brand.backgroundStyle`, so palette changes regenerate automatically; the edited leads by a hash of `EDIT_MODEL` + the editor prompt, so skill/prompt changes re-run only the cheap edit pass. `FRESH=1` / the `fresh` input bypasses it. |
-| `src/cli.mjs` | `generate <newsletter>` / `publish <newsletter> <url>`; writes `stories/<key>/<date>-<slug>.jpg` + `.pending.json`; records published issues in `published.json`. |
+| `src/custom.mjs` | Ad-hoc local Story (`cli.mjs custom <newsletter> <image> "<caption>"`): optional `brand.logo` (white wordmark in `assets/logos/`) above a thumbnail card over its own blurred copy + caption panel (`customTree` in `layout.mjs`), no AI. Renders to `stories/custom/` (gitignored); `hostOnS3()` (`src/hosting.mjs`) uploads it with the aws CLI to `STORIES_S3_BUCKET` under `insta-stories/<name>-<content-hash>.jpg` (immutable, no CloudFront invalidation) and returns the `STORIES_CDN_BASE` URL; then it's posted immediately. Nothing is committed. `DRY_RUN=1` renders only. Not recorded in `published.json`. Agents drive it via the `.claude/skills/custom-story/` skill (preview → user go-ahead → post). |
+| `src/cli.mjs` | `generate <newsletter>` / `publish <newsletter> <url>` / `custom …`; writes `stories/<key>/<date>-<slug>.jpg` + `.pending.json`; records published issues in `published.json`. |
 | `relay/` | Cloudflare Worker relaying allow-listed feeds — Substack serves GitHub runners a Cloudflare challenge. Requires `Authorization: Bearer <FEED_RELAY_TOKEN>` (Worker secret `RELAY_TOKEN`). Deploy: `cd relay && npx wrangler@latest deploy` (Node 22). |
 | `.github/workflows/story.yml` | Reusable pipeline (generate → artifact → commit → publish → record). |
 | `.github/workflows/<key>.yml` | Thin schedule + manual-dispatch callers, one per newsletter. |
@@ -86,7 +87,8 @@ export PATH=~/.nvm/versions/node/v22.22.0/bin:$PATH
 
 - Local `.env` (gitignored) and GitHub repository secrets use the same names: `OPENROUTER_API_KEY`,
   `META_ACCESS_TOKEN`, `INSTAGRAM_USER_ID`, `MAILERLITE_API_KEY`, `FEED_RELAY_TOKEN`, optional
-  `OPANUJ_AI_INSTAGRAM_USER_ID`.
+  `OPANUJ_AI_INSTAGRAM_USER_ID`. Local-only (ad-hoc Stories): `STORIES_S3_BUCKET`, `STORIES_CDN_BASE`, plus
+  the aws CLI's own credentials.
 - **Never print secret values.** Check presence by length; redact tokens in output.
 - The user pastes secrets and runs `gh secret set -f .env --repo przeprogramowani/przeprogramowani-insta-stories`.
 - `META_ACCESS_TOKEN` is a non-expiring Meta **Page** token. Meta's data-access window must be

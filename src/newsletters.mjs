@@ -17,6 +17,8 @@ export const NEWSLETTERS = {
     brand: {
       headline: ['Przeprogramowany', 'Newsletter'],
       url: 'przeprogramowani.pl/newsletter',
+      // White wordmark, shown above the thumbnail in ad-hoc Stories (src/custom.mjs).
+      logo: 'assets/logos/przeprogramowani-white.png',
       // Red-ish identity.
       badge: '#e53935',
       panel: 'rgba(28, 8, 12, 0.84)',
