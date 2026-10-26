@@ -16,7 +16,7 @@ Plain Node 22 ESM (`.mjs`), no build step, no framework. Dependencies: `sharp`, 
 newsletter.latest()  ─▶ writeLeads()          ─▶ polishLeads()          ─▶ generateBackground()     ─▶ composeStory()        ─▶ JPEG 1080×1920
 (src/sources/*)        text model, 3 PL leads    no-ai-slop copy edit      image model, no text        Satori layout + fonts
                                                                                                                 │
-GitHub Action: commit image ─▶ raw.githubusercontent.com URL ─▶ publishStory() (Graph API) ─▶ published.json
+GitHub Action: hostOnS3() ─▶ CloudFront URL ─▶ publishStory() (Graph API) ─▶ published.json (committed)
 ```
 
 | Path | Responsibility |
@@ -31,9 +31,10 @@ GitHub Action: commit image ─▶ raw.githubusercontent.com URL ─▶ publishS
 | `src/instagram.mjs` | Graph API: create `STORIES` container from a public JPEG URL → poll → `media_publish`. |
 | `src/cache.mjs` | Per-issue cache of the paid steps (`leads.json` draft, `leads-edited-<hash>.json`, `background-<hash>.png`) in `.cache/<newsletter>/<issue-hash>/`, persisted across runs with `actions/cache` (restore newest `story-<newsletter>-*`, save under the run id, even on failure). Only the current issue is kept. The background file is keyed by a hash of `brand.backgroundStyle`, so palette changes regenerate automatically; the edited leads by a hash of `EDIT_MODEL` + the editor prompt, so skill/prompt changes re-run only the cheap edit pass. `FRESH=1` / the `fresh` input bypasses it. |
 | `src/custom.mjs` | Ad-hoc local Story (`cli.mjs custom <newsletter> <image> "<caption>"`): optional `brand.logo` (white wordmark in `assets/logos/`) above a thumbnail card over its own blurred copy + caption panel (`customTree` in `layout.mjs`), no AI. Renders to `stories/custom/` (gitignored); `hostOnS3()` (`src/hosting.mjs`) uploads it with the aws CLI to `STORIES_S3_BUCKET` under `insta-stories/<name>-<content-hash>.jpg` (immutable, no CloudFront invalidation) and returns the `STORIES_CDN_BASE` URL; then it's posted immediately. Nothing is committed. `DRY_RUN=1` renders only. Not recorded in `published.json`. Agents drive it via the `.claude/skills/custom-story/` skill (preview → user go-ahead → post). |
-| `src/cli.mjs` | `generate <newsletter>` / `publish <newsletter> <url>` / `custom …`; writes `stories/<key>/<date>-<slug>.jpg` + `.pending.json`; records published issues in `published.json`. |
+| `src/hosting.mjs` | `hostOnS3(file, prefix)`: `aws s3 cp` to `STORIES_S3_BUCKET` under `<prefix>/<name>-<content-hash>.jpg` (immutable, no CloudFront invalidation), waits until the `STORIES_CDN_BASE` URL answers. Weekly Stories go under `insta-stories/<key>/`, ad-hoc ones under `insta-stories/`. In Actions the `insta-stories-ci` IAM user can only `s3:PutObject` there. |
+| `src/cli.mjs` | `generate <newsletter>` / `upload <newsletter>` / `publish <newsletter> [url]` / `custom …`; writes `stories/<key>/<date>-<slug>.jpg` + `.pending.json` (`stories/` is gitignored; older images are still tracked from when Git was the hosting); records published issues (with the CDN URL) in `published.json`. |
 | `relay/` | Cloudflare Worker relaying allow-listed feeds — Substack serves GitHub runners a Cloudflare challenge. Requires `Authorization: Bearer <FEED_RELAY_TOKEN>` (Worker secret `RELAY_TOKEN`). Deploy: `cd relay && npx wrangler@latest deploy` (Node 22). |
-| `.github/workflows/story.yml` | Reusable pipeline (generate → artifact → commit → publish → record). |
+| `.github/workflows/story.yml` | Reusable pipeline (generate → artifact → upload to S3 → publish → commit `published.json`). |
 | `.github/workflows/<key>.yml` | Thin schedule + manual-dispatch callers, one per newsletter. |
 
 ## Design decisions — keep them unless the user asks otherwise
@@ -43,8 +44,9 @@ GitHub Action: commit image ─▶ raw.githubusercontent.com URL ─▶ publishS
   asking the image model for the whole Story.
 - **Layout follows the user's template** (badge top-left, dark header band, pill, three cards).
   Keep content clear of Instagram's UI: nothing important above y≈230 or below y≈1700.
-- **Instagram needs a public JPEG URL** — no direct upload. That's why the Action commits the image
-  and the repo must stay **public**. Use the commit-SHA raw URL (immutable), not `main`.
+- **Instagram needs a public JPEG URL** — no direct upload. Images go to S3 behind CloudFront
+  (`src/hosting.mjs`), never into git; keys carry a content hash, so a URL never changes content.
+  Dry runs upload too (the preview gets a URL; nothing is posted).
 - **One Story per issue.** `published.json` is the dedupe log; `FORCE=1` / the `force` input
   overrides it. Generated images stay in git history on purpose (they're the hosting).
 - **One UTC cron per newsletter** (08:00 UTC): GitHub crons have no time zone, so the local time
@@ -77,8 +79,7 @@ export PATH=~/.nvm/versions/node/v22.22.0/bin:$PATH
   dummy leads that include `ąćęłńóśźż ĄĆĘŁŃÓŚŹŻ` and a long two-line sentence, then **look at the
   PNG** (Read the image). Check the badge doesn't cover the headline and nothing overflows the cards.
 - **Full generation (costs a few cents, ~1 min):** `FORCE=1 node src/cli.mjs generate <key>` with
-  `.env` loaded, then look at `stories/<key>/…jpg`. Delete test outputs (or move one to `examples/`)
-  before committing — `stories/` is what the Action publishes.
+  `.env` loaded, then look at `stories/<key>/…jpg` (gitignored; copy one to `examples/` to keep it).
 - **Publishing** only happens in Actions. To test end to end, run the workflow manually with
   `dry_run` off — that posts a real Story, so ask the user first.
 - Syntax check: `for f in src/*.mjs src/sources/*.mjs; do node --check "$f"; done`.
@@ -87,8 +88,9 @@ export PATH=~/.nvm/versions/node/v22.22.0/bin:$PATH
 
 - Local `.env` (gitignored) and GitHub repository secrets use the same names: `OPENROUTER_API_KEY`,
   `META_ACCESS_TOKEN`, `INSTAGRAM_USER_ID`, `MAILERLITE_API_KEY`, `FEED_RELAY_TOKEN`, optional
-  `OPANUJ_AI_INSTAGRAM_USER_ID`. Local-only (ad-hoc Stories): `STORIES_S3_BUCKET`, `STORIES_CDN_BASE`, plus
-  the aws CLI's own credentials.
+  `OPANUJ_AI_INSTAGRAM_USER_ID`, `STORIES_S3_BUCKET`, `STORIES_CDN_BASE`. GitHub also has
+  `AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY` / `AWS_REGION` (IAM user `insta-stories-ci`, PutObject on
+  the `insta-stories/` prefix only); locally the aws CLI's own credentials are used.
 - **Never print secret values.** Check presence by length; redact tokens in output.
 - The user pastes secrets and runs `gh secret set -f .env --repo przeprogramowani/przeprogramowani-insta-stories`.
 - `META_ACCESS_TOKEN` is a non-expiring Meta **Page** token. Meta's data-access window must be
@@ -105,6 +107,8 @@ export PATH=~/.nvm/versions/node/v22.22.0/bin:$PATH
     lists ids with `output_modalities` containing `image`) or key/credits.
   - `Graph … (#190)` / `OAuthException` → Meta token invalid or data access lapsed → regenerate.
   - `Container ERROR` → Instagram couldn't fetch/accept the image (must be JPEG, 9:16, public URL).
+  - Upload step `AccessDenied` / `InvalidAccessKeyId` → the `insta-stories-ci` key was rotated or its
+    policy changed; create a new access key and update the two `AWS_*` secrets.
   - `MailerLite 401` → wrong key; `No sent MailerLite campaign matching` → naming changed.
 - **Run "succeeded" but nothing posted** → the issue was
   already in `published.json` (`skip=true` in the generate step).

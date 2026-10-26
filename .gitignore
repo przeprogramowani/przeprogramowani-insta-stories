@@ -1,7 +1,6 @@
 node_modules/
 .env
-stories/*/.pending.json
+stories/
 relay/.wrangler/
 .cache/
 CLAUDE.local.md
-stories/custom/

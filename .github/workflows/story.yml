@@ -1,4 +1,4 @@
-# Reusable pipeline: generate the Story for one newsletter, commit the image, publish it to Instagram.
+# Reusable pipeline: generate the Story for one newsletter, upload it to S3, publish it to Instagram.
 name: Story pipeline
 
 on:
@@ -15,6 +15,11 @@ on:
       MAILERLITE_API_KEY: { required: false }
       FEED_RELAY_TOKEN: { required: false }
       OPANUJ_AI_INSTAGRAM_USER_ID: { required: false }
+      AWS_ACCESS_KEY_ID: { required: true }
+      AWS_SECRET_ACCESS_KEY: { required: true }
+      AWS_REGION: { required: true }
+      STORIES_S3_BUCKET: { required: true }
+      STORIES_CDN_BASE: { required: true }
 
 permissions:
   contents: write
@@ -63,32 +68,34 @@ jobs:
         uses: actions/upload-artifact@v7
         with: { name: 'story-${{ inputs.newsletter }}', path: '${{ steps.gen.outputs.file }}' }
 
-      - name: Commit image (Instagram fetches it from a public URL)
-        id: commit
-        if: steps.gen.outputs.skip == 'false' && !inputs.dry_run
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add "${{ steps.gen.outputs.file }}"
-          git commit -m "story(${{ inputs.newsletter }}): add ${{ steps.gen.outputs.file }}"
-          git pull --rebase && git push
-          echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+      # Instagram fetches the image from a public URL. Dry runs upload too, so the preview has a URL
+      # (content-hashed key, so the real run after an unchanged dry run reuses the same object).
+      - name: Upload image to S3
+        id: upload
+        if: steps.gen.outputs.skip == 'false'
+        run: node src/cli.mjs upload ${{ inputs.newsletter }}
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: ${{ secrets.AWS_REGION }}
+          STORIES_S3_BUCKET: ${{ secrets.STORIES_S3_BUCKET }}
+          STORIES_CDN_BASE: ${{ secrets.STORIES_CDN_BASE }}
 
       - name: Publish to Instagram Stories
-        if: steps.commit.outcome == 'success'
-        run: |
-          url="https://raw.githubusercontent.com/${{ github.repository }}/${{ steps.commit.outputs.sha }}/${{ steps.gen.outputs.file }}"
-          # raw.githubusercontent.com can lag a few seconds behind a push.
-          for i in 1 2 3 4 5 6; do curl -sfI "$url" >/dev/null && break; sleep 5; done
-          node src/cli.mjs publish ${{ inputs.newsletter }} "$url"
+        id: publish
+        if: steps.upload.outcome == 'success' && !inputs.dry_run
+        run: node src/cli.mjs publish ${{ inputs.newsletter }}
         env:
           META_ACCESS_TOKEN: ${{ secrets.META_ACCESS_TOKEN }}
           INSTAGRAM_USER_ID: ${{ secrets.INSTAGRAM_USER_ID }}
           OPANUJ_AI_INSTAGRAM_USER_ID: ${{ secrets.OPANUJ_AI_INSTAGRAM_USER_ID }}
 
+      # published.json is the dedupe log, the only thing this pipeline still commits.
       - name: Record published Story
-        if: steps.commit.outcome == 'success'
+        if: steps.publish.outcome == 'success'
         run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add published.json
           git commit -m "story(${{ inputs.newsletter }}): published ${{ steps.gen.outputs.file }}"
           git pull --rebase && git push

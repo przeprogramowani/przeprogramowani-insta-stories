@@ -1,6 +1,7 @@
 // Usage (newsletter: przeprogramowani | opanuj-ai):
 //   node src/cli.mjs generate <newsletter>        → stories/<newsletter>/<date>-<slug>.jpg (+ .pending.json)
-//   node src/cli.mjs publish <newsletter> <url>   → posts the pending image (served at <url>) as a Story
+//   node src/cli.mjs upload <newsletter>          → uploads the pending image to S3, prints its CDN URL
+//   node src/cli.mjs publish <newsletter> [url]   → posts the pending image (uploaded, or served at <url>) as a Story
 //   node src/cli.mjs custom <newsletter> <image> "<caption>"
 //                                                 → renders an ad-hoc Story (no AI), uploads it to S3, posts it
 // Env: FORCE=1 regenerates even if the latest issue already had a Story. DRY_RUN=1 makes `custom` render only.
@@ -41,11 +42,21 @@ async function generate(nl) {
   output('file', file);
 }
 
-async function publish(nl, url) {
-  if (!url) throw new Error('publish needs the public URL of the generated image');
+/** Instagram only fetches public URLs: put the pending image on S3/CloudFront and remember the URL. */
+async function upload(nl) {
   const pending = JSON.parse(readFileSync(pendingPath(nl), 'utf8'));
+  pending.url = await hostOnS3(pending.file, `insta-stories/${nl.key}`);
+  writeFileSync(pendingPath(nl), JSON.stringify(pending, null, 2));
+  console.log(`Uploaded ${pending.url}`);
+  output('url', pending.url);
+}
+
+async function publish(nl, url) {
+  const pending = JSON.parse(readFileSync(pendingPath(nl), 'utf8'));
+  url ??= pending.url;
+  if (!url) throw new Error('Nothing uploaded yet — run `upload` first or pass the public URL of the image');
   const mediaId = await publishStory(url, nl.instagramUserIdEnv);
-  (state[nl.key] ??= []).push({ id: pending.id, title: pending.title, file: pending.file, leads: pending.leads, mediaId, at: new Date().toISOString() });
+  (state[nl.key] ??= []).push({ id: pending.id, title: pending.title, url, leads: pending.leads, mediaId, at: new Date().toISOString() });
   saveState();
   console.log(`[${nl.key}] Published Story ${mediaId} for "${pending.title}"`);
 }
@@ -69,9 +80,10 @@ const [cmd, key, arg, arg2] = process.argv.slice(2);
 try {
   const nl = getNewsletter(key);
   if (cmd === 'generate') await generate(nl);
+  else if (cmd === 'upload') await upload(nl);
   else if (cmd === 'publish') await publish(nl, arg);
   else if (cmd === 'custom') await custom(nl, arg, arg2);
-  else throw new Error('Usage: node src/cli.mjs generate <newsletter> | publish <newsletter> <url> | custom <newsletter> <image> "<caption>"');
+  else throw new Error('Usage: node src/cli.mjs generate <newsletter> | upload <newsletter> | publish <newsletter> [url] | custom <newsletter> <image> "<caption>"');
 } catch (e) {
   console.error(e instanceof Error ? e.message : e);
   process.exit(1);
