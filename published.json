@@ -106,6 +106,27 @@
       ],
       "mediaId": "18095604824677783",
       "at": "2026-10-20T13:08:41.763Z"
+    },
+    {
+      "id": "mailerlite:202394637848020021",
+      "title": "📅 W 2027r. nie rozpoznasz głosu AI - oto dowód",
+      "url": "https://images.przeprogramowani.pl/insta-stories/opanuj-ai/2026-10-27-w-2027r-nie-rozpoznasz-glosu-ai-oto-dowod-ba724a1a.jpg",
+      "leads": [
+        {
+          "title": "Głos AI w 2027",
+          "text": "Model Dessa firmy Block uczył się mówić ze słuchu, bez pisanego tekstu. Śmieje się w pół zdania i odpowiada bez pauz."
+        },
+        {
+          "title": "Sandboxy dla agentów",
+          "text": "Google w Agent Compute Engine daje każdemu agentowi własny mikro-komputer. Oddziela on decyzje agenta od wykonywania pracy."
+        },
+        {
+          "title": "Jak AI idzie na skróty",
+          "text": "Model uczony na wideo z Ponga uznał za głównego bohatera piłeczkę albo licznik punktów. Naprawa zajęła autorowi tygodnie."
+        }
+      ],
+      "mediaId": "18134060350781512",
+      "at": "2026-10-27T13:44:22.260Z"
     }
   ]
 }
