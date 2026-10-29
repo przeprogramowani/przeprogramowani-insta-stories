@@ -52,8 +52,8 @@ export async function renderCustom(input, caption, brand) {
     .modulate({ brightness: 0.45 })
     .png()
     .toBuffer();
-  // The source wordmark is small (313×46); upscale once with Lanczos rather than letting resvg stretch it.
-  const logo = brand.logo && (await sharp(brand.logo).resize({ height: LOGO_HEIGHT, kernel: 'lanczos3' }).png().toBuffer({ resolveWithObject: true }));
+  // Resize once with Lanczos (the Przeprogramowani wordmark is only 313×46) rather than letting resvg stretch it.
+  const logo = brand.logo && (await sharp(brand.logo).resize({ height: brand.logoHeight ?? LOGO_HEIGHT, kernel: 'lanczos3' }).png().toBuffer({ resolveWithObject: true }));
   const story = await composeCustom(background, { png, width, height }, caption, brand, logo && { png: logo.data, width: logo.info.width, height: logo.info.height });
   return sharp(story).jpeg({ quality: 92 }).toBuffer();
 }

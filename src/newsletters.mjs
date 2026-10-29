@@ -37,6 +37,9 @@ export const NEWSLETTERS = {
     brand: {
       headline: ['Opanuj.AI', 'Newsletter'],
       url: 'opanuj.ai/newsletter',
+      // Stacked wordmark (OPANUJ AI / PRZEPROGRAMOWANI), so it needs more height than the one-line one.
+      logo: 'assets/logos/opanuj-ai-white.png',
+      logoHeight: 150,
       // Blue-ish identity (opanuj.ai primary #1e40af).
       badge: '#1e40af',
       panel: 'rgba(6, 14, 36, 0.84)',
