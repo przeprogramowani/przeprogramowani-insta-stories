@@ -56,6 +56,8 @@ The Meta token's data access must be re-confirmed every 90 days; after regenerat
   ```bash
   DRY_RUN=1 npm run custom -- przeprogramowani ~/Desktop/thumb.png "Nowy odcinek już jest!"   # preview only
   npm run custom -- przeprogramowani ~/Desktop/thumb.png "Nowy odcinek już jest!\nLink w bio"  # render, upload, post
+  DRY_RUN=1 node src/cli.mjs reel przeprogramowani ~/Desktop/clip.mp4 "Opis rolki"   # check/prepare the video only
+  node src/cli.mjs reel przeprogramowani ~/Desktop/clip.mp4 "Opis rolki" [cover.jpg]  # upload to S3, post as a Reel
   ```
 
   The image can be a path, an `https://` URL or `clipboard` (macOS: the copied image, or the image file copied in Finder); `\n` breaks the line and keeps each line whole; max 280

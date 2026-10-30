@@ -1,4 +1,9 @@
 import { existsSync, readFileSync } from 'node:fs';
+import { setDefaultAutoSelectFamilyAttemptTimeout } from 'node:net';
+
+// Node gives each IPv6/IPv4 address 250 ms to connect; on a slow link or a dead IPv6 route every attempt times out
+// ("fetch failed") while curl works. Give each address a few seconds.
+setDefaultAutoSelectFamilyAttemptTimeout(5000);
 
 // Local runs read .env; in GitHub Actions the same names come from repository secrets.
 if (existsSync('.env')) {

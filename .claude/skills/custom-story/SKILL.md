@@ -1,6 +1,6 @@
 ---
 name: custom-story
-description: Render an ad-hoc 9:16 Instagram Story from a thumbnail (local path, https URL or the macOS clipboard) and a short caption, preview it, and post it to the Przeprogramowani or Opanuj.AI Instagram account right away. Use when the user wants to post a one-off Story with an image and a note, e.g. "wrzuć story z tą miniaturką", "opublikuj relację z dopiskiem", "zrób story z tego obrazka", "mam obrazek w schowku", "post this thumbnail as a Story". Excludes: the weekly newsletter Stories (those run from GitHub Actions via `cli.mjs generate`), feed posts, Reels and video.
+description: Render an ad-hoc 9:16 Instagram Story from a thumbnail (local path, https URL or the macOS clipboard) and a short caption, preview it, and post it to the Przeprogramowani or Opanuj.AI Instagram account right away. Use when the user wants to post a one-off Story with an image and a note, e.g. "wrzuć story z tą miniaturką", "opublikuj relację z dopiskiem", "zrób story z tego obrazka", "mam obrazek w schowku", "post this thumbnail as a Story". Excludes: the weekly newsletter Stories (those run from GitHub Actions via `cli.mjs generate`), feed posts, Reels and video (use the reel skill).
 ---
 
 # Custom Story

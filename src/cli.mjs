@@ -4,11 +4,14 @@
 //   node src/cli.mjs publish <newsletter> [url]   → posts the pending image (uploaded, or served at <url>) as a Story
 //   node src/cli.mjs custom <newsletter> <image|clipboard> "<caption>"
 //                                                 → renders an ad-hoc Story (no AI), uploads it to S3, posts it
-// Env: FORCE=1 regenerates even if the latest issue already had a Story. DRY_RUN=1 makes `custom` render only.
+//   node src/cli.mjs reel <newsletter> <video> "<caption>" [cover image]
+//                                                 → checks/remuxes the video, uploads it to S3, posts it as a Reel
+// Env: FORCE=1 regenerates even if the latest issue already had a Story. DRY_RUN=1 makes `custom` render only and `reel` prepare only.
 import { existsSync, readFileSync, writeFileSync, mkdirSync, appendFileSync } from 'node:fs';
 import { getNewsletter } from './newsletters.mjs';
 import { renderStory } from './image.mjs';
-import { publishStory } from './instagram.mjs';
+import { publishStory, publishReel, permalink } from './instagram.mjs';
+import { prepareReel, prepareCover } from './reel.mjs';
 import { renderCustom, saveClipboardImage } from './custom.mjs';
 import { hostOnS3 } from './hosting.mjs';
 
@@ -80,14 +83,34 @@ async function custom(nl, image, caption) {
   console.log(`[${nl.key}] Published Story ${mediaId} (${url})`);
 }
 
-const [cmd, key, arg, arg2] = process.argv.slice(2);
+/** Post a local video as a Reel with the given caption (and optional cover image). Not recorded in published.json. */
+async function reel(nl, video, caption, cover) {
+  if (!video || !caption) throw new Error('reel needs a video file and a caption');
+  caption = caption.replace(/\\n/g, '\n').trim();
+  if (caption.length > 2200) throw new Error(`Caption is ${caption.length} chars — Instagram allows 2200`);
+  if ((caption.match(/#[\p{L}\p{N}_]+/gu) ?? []).length > 30) throw new Error('Instagram allows at most 30 hashtags');
+  const { file, info, warnings } = prepareReel(video);
+  console.log(`Wrote ${file}: ${info.width}×${info.height}, ${info.duration.toFixed(1)} s, ${info.fps.toFixed(0)} fps, ${info.video}/${info.audio ?? 'no audio'}, ${info.sizeMb.toFixed(1)} MB${info.reencoded ? ' (re-encoded)' : ''}`);
+  for (const w of warnings) console.log(`Warning: ${w}`);
+  const coverFile = cover && (await prepareCover(cover, file));
+  if (coverFile) console.log(`Wrote ${coverFile}`);
+  if (process.env.DRY_RUN) return;
+  const url = await hostOnS3(file, 'insta-stories/reels');
+  const coverUrl = coverFile && (await hostOnS3(coverFile, 'insta-stories/reels'));
+  console.log(`Uploaded ${url} — waiting for Instagram to process the video…`);
+  const mediaId = await publishReel(url, caption, { instagramUserIdEnv: nl.instagramUserIdEnv, coverUrl });
+  console.log(`[${nl.key}] Published Reel ${mediaId} ${await permalink(mediaId).catch(() => '')}`);
+}
+
+const [cmd, key, arg, arg2, arg3] = process.argv.slice(2);
 try {
   const nl = getNewsletter(key);
   if (cmd === 'generate') await generate(nl);
   else if (cmd === 'upload') await upload(nl);
   else if (cmd === 'publish') await publish(nl, arg);
   else if (cmd === 'custom') await custom(nl, arg, arg2);
-  else throw new Error('Usage: node src/cli.mjs generate <newsletter> | upload <newsletter> | publish <newsletter> [url] | custom <newsletter> <image|clipboard> "<caption>"');
+  else if (cmd === 'reel') await reel(nl, arg, arg2, arg3);
+  else throw new Error('Usage: node src/cli.mjs generate <newsletter> | upload <newsletter> | publish <newsletter> [url] | custom <newsletter> <image|clipboard> "<caption>" | reel <newsletter> <video> "<caption>" [cover]');
 } catch (e) {
   console.error(e instanceof Error ? e.message : e);
   process.exit(1);
