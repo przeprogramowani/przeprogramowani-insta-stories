@@ -24,15 +24,48 @@ async function graph(method, path, params) {
 /** Create a media container, wait until Instagram has fetched and processed it, publish; returns the media id. */
 async function createAndPublish(igId, params, { attempts, intervalMs }) {
   const { id: containerId } = await graph('POST', `${igId}/media`, params);
+  await waitUntilFinished(containerId, { attempts, intervalMs });
+  const { id } = await graph('POST', `${igId}/media_publish`, { creation_id: containerId });
+  return id;
+}
+
+async function waitUntilFinished(containerId, { attempts, intervalMs }) {
   for (let i = 0; ; i++) {
     const { status_code, status } = await graph('GET', containerId, { fields: 'status_code,status' });
-    if (status_code === 'FINISHED') break;
+    if (status_code === 'FINISHED') return;
     if (status_code === 'ERROR' || status_code === 'EXPIRED') throw new Error(`Container ${status_code}: ${status}`);
     if (i >= attempts) throw new Error(`Container ${containerId} still ${status_code} — not published`);
     await new Promise((r) => setTimeout(r, intervalMs));
   }
-  const { id } = await graph('POST', `${igId}/media_publish`, { creation_id: containerId });
+}
+
+/**
+ * Create an unpublished carousel container from public JPEG URLs; returns its id. Nothing is visible on the
+ * account. The Graph API has no real drafts: this container doesn't show up in the app's Drafts, and it
+ * expires 24 hours after creation unless it's published with publishCarouselDraft().
+ */
+export async function createCarouselDraft(imageUrls, caption, instagramUserIdEnv = 'INSTAGRAM_USER_ID') {
+  const igId = required(instagramUserIdEnv);
+  const wait = { attempts: 20, intervalMs: 3000 };
+  const children = [];
+  for (const image_url of imageUrls) {
+    const { id } = await graph('POST', `${igId}/media`, { image_url, is_carousel_item: 'true' });
+    await waitUntilFinished(id, wait);
+    children.push(id);
+  }
+  const { id } = await graph('POST', `${igId}/media`, { media_type: 'CAROUSEL', children: children.join(','), caption });
+  await waitUntilFinished(id, wait);
   return id;
+}
+
+/** FINISHED means a draft container can still be published; anything else means it has to be recreated. */
+export async function containerStatus(containerId) {
+  return (await graph('GET', containerId, { fields: 'status_code' })).status_code;
+}
+
+/** Publish a container from createCarouselDraft(); this is the public step. Returns the media id. */
+export async function publishCarouselDraft(containerId, instagramUserIdEnv = 'INSTAGRAM_USER_ID') {
+  return (await graph('POST', `${required(instagramUserIdEnv)}/media_publish`, { creation_id: containerId })).id;
 }
 
 /** Publish a public JPEG URL as an Instagram Story; returns the media id. */

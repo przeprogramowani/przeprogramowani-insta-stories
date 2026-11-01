@@ -6,7 +6,11 @@
 //                                                 → renders an ad-hoc Story (no AI), uploads it to S3, posts it
 //   node src/cli.mjs reel <newsletter> <video> "<caption>" [cover image]
 //                                                 → checks/remuxes the video, uploads it to S3, posts it as a Reel
-// Env: FORCE=1 regenerates even if the latest issue already had a Story. DRY_RUN=1 makes `custom` render only and `reel` prepare only.
+//   node src/cli.mjs carousel <newsletter> <url|file|clipboard|-|text|draft dir>
+//                                                 → 5 slides from long-form content, uploaded to S3 as an unpublished IG container
+//   node src/cli.mjs carousel-publish <newsletter> <draft dir>
+//                                                 → publishes that draft (recreates the container if it expired)
+// Env: FORCE=1 regenerates even if the latest issue already had a Story. DRY_RUN=1 makes `custom` and `carousel` render only and `reel` prepare only. RESEED=1 gives a carousel draft new artwork.
 import { existsSync, readFileSync, writeFileSync, mkdirSync, appendFileSync } from 'node:fs';
 import { getNewsletter } from './newsletters.mjs';
 import { renderStory } from './image.mjs';
@@ -14,6 +18,7 @@ import { publishStory, publishReel, permalink } from './instagram.mjs';
 import { prepareReel, prepareCover } from './reel.mjs';
 import { renderCustom, saveClipboardImage } from './custom.mjs';
 import { hostOnS3 } from './hosting.mjs';
+import { createCarousel, rerenderCarousel, submitCarousel, publishCarousel } from './carousel.mjs';
 
 const STATE = 'published.json';
 const state = existsSync(STATE) ? JSON.parse(readFileSync(STATE, 'utf8')) : {};
@@ -102,6 +107,27 @@ async function reel(nl, video, caption, cover) {
   console.log(`[${nl.key}] Published Reel ${mediaId} ${await permalink(mediaId).catch(() => '')}`);
 }
 
+/** Long-form content → local draft; without DRY_RUN also an unpublished container. A draft dir re-renders that draft. */
+async function carousel(nl, source) {
+  if (!source) throw new Error('carousel needs a source: URL, file, `clipboard`, `-` (stdin), pasted text or an existing draft directory');
+  const isDraftDir = existsSync(`${source}/draft.json`);
+  const dir = isDraftDir ? source : await createCarousel(source, nl, (title) => `stories/carousels/${new Date().toISOString().slice(0, 10)}-${slug(title)}`);
+  const draft = await rerenderCarousel(dir, nl);
+  console.log(`[${nl.key}] Draft ${dir} (world: ${draft.world}, seed: ${draft.seed})`);
+  for (const f of draft.images) console.log(`Wrote ${f}`);
+  console.log(`Caption:\n${draft.caption}`);
+  if (process.env.DRY_RUN) return;
+  const { containerId } = await submitCarousel(dir, nl);
+  console.log(`[${nl.key}] Draft container ${containerId} is ready and NOT published. It expires in 24 h and isn't visible in the Instagram app.`);
+  console.log(`Publish: node src/cli.mjs carousel-publish ${nl.key} ${dir}`);
+}
+
+async function carouselPublish(nl, dir) {
+  if (!dir) throw new Error('carousel-publish needs a draft directory');
+  const mediaId = await publishCarousel(dir, nl);
+  console.log(`[${nl.key}] Published carousel ${mediaId} ${await permalink(mediaId).catch(() => '')}`);
+}
+
 const [cmd, key, arg, arg2, arg3] = process.argv.slice(2);
 try {
   const nl = getNewsletter(key);
@@ -110,7 +136,9 @@ try {
   else if (cmd === 'publish') await publish(nl, arg);
   else if (cmd === 'custom') await custom(nl, arg, arg2);
   else if (cmd === 'reel') await reel(nl, arg, arg2, arg3);
-  else throw new Error('Usage: node src/cli.mjs generate <newsletter> | upload <newsletter> | publish <newsletter> [url] | custom <newsletter> <image|clipboard> "<caption>" | reel <newsletter> <video> "<caption>" [cover]');
+  else if (cmd === 'carousel') await carousel(nl, arg);
+  else if (cmd === 'carousel-publish') await carouselPublish(nl, arg);
+  else throw new Error('Usage: node src/cli.mjs generate <newsletter> | upload <newsletter> | publish <newsletter> [url] | custom <newsletter> <image|clipboard> "<caption>" | reel <newsletter> <video> "<caption>" [cover] | carousel <newsletter> <source> | carousel-publish <newsletter> <draft dir>');
 } catch (e) {
   console.error(e instanceof Error ? e.message : e);
   process.exit(1);

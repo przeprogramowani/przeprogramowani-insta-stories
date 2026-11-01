@@ -10,7 +10,8 @@
   "scripts": {
     "generate": "node src/cli.mjs generate",
     "publish": "node src/cli.mjs publish",
-    "custom": "node src/cli.mjs custom"
+    "custom": "node src/cli.mjs custom",
+    "carousel": "node src/cli.mjs carousel"
   },
   "dependencies": {
     "@resvg/resvg-js": "^2.6.2",

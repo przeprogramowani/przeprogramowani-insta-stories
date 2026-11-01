@@ -4,9 +4,16 @@ import { EDIT_MODEL, openrouter } from './config.mjs';
 
 // The vendored no-ai-slop skill (.claude/skills/no-ai-slop, MIT) is the editor's rulebook.
 const SKILL_DIR = new URL('../.claude/skills/no-ai-slop/', import.meta.url);
-const skill = ['SKILL.md', 'eval.md'].map((f) => readFileSync(new URL(f, SKILL_DIR), 'utf8')).join('\n\n---\n\n');
+export const skill = ['SKILL.md', 'eval.md'].map((f) => readFileSync(new URL(f, SKILL_DIR), 'utf8')).join('\n\n---\n\n');
 
 const LIMITS = { title: 40, text: 140 };
+
+/** AI-sounding patterns common in Polish copy; also used by the carousel editor (src/carousel-copy.mjs). */
+export const POLISH_SLOP_PATTERNS = `- kontrast binarny: "To nie X, to Y", "Nie X, tylko Y", "Problemem nie jest X, lecz Y", "Nie wystarczy X. Liczy się Y" → napisz wprost samo Y;
+- metakomentarz i zapowiedzi: "Zobacz, jak…", "Sprawdź, co…", "Dowiesz się…", "O tym, co…", "Przegląd…" → od razu podaj, co konkretnie jest w materiale;
+- puszenie i ogólniki: "Kluczowe:", "Co ważne,", "w dzisiejszym świecie", "rewolucja", "przełom", "game changer", "realne", "sensowne";
+- pytania retoryczne, puenty-aforyzmy, dramatyczne fragmenty zdań, myślniki;
+- gry słowne, kalambury i neologizmy, zwłaszcza z "AI" ("AI-nowo", "AI-pokalipsa", "zAIskakujące") → zwykłe słowa, np. "Jak ocenić firmę AI-nowo" → "Jak ocenić firmę AI".`;
 
 const task = `${skill}
 
@@ -16,11 +23,7 @@ const task = `${skill}
 
 Robisz "Edit" na trzech leadach do Instagram Story newslettera. Leady są po polsku: stosuj powyższe
 reguły do ich polskich odpowiedników. Najczęstsze w polskich leadach, zawsze do usunięcia:
-- kontrast binarny: "To nie X, to Y", "Nie X, tylko Y", "Problemem nie jest X, lecz Y", "Nie wystarczy X. Liczy się Y" → napisz wprost samo Y;
-- metakomentarz i zapowiedzi: "Zobacz, jak…", "Sprawdź, co…", "Dowiesz się…", "O tym, co…", "Przegląd…" → od razu podaj, co konkretnie jest w materiale;
-- puszenie i ogólniki: "Kluczowe:", "Co ważne,", "w dzisiejszym świecie", "rewolucja", "przełom", "game changer", "realne", "sensowne";
-- pytania retoryczne, puenty-aforyzmy, dramatyczne fragmenty zdań, myślniki;
-- gry słowne, kalambury i neologizmy, zwłaszcza z "AI" ("AI-nowo", "AI-pokalipsa", "zAIskakujące") → zwykłe słowa, np. "Jak ocenić firmę AI-nowo" → "Jak ocenić firmę AI".
+${POLISH_SLOP_PATTERNS}
 Wykonaj checklistę z eval.md w myślach, zanim odpowiesz, i sprawdź każdy lead osobno pod kątem listy wyżej.
 
 - Zachowaj liczbę i kolejność leadów oraz temat każdego z nich.

@@ -4,16 +4,19 @@ import { Resvg } from '@resvg/resvg-js';
 import { STORY } from './config.mjs';
 
 const font = (name, file, weight) => ({ name, weight, style: 'normal', data: readFileSync(`assets/fonts/${file}`) });
-const FONTS = [
+export const FONTS = [
   font('Anton', 'Anton-Regular.ttf', 400),
   font('Josefin Sans', 'JosefinSans-SemiBold.ttf', 600),
   font('Inter', 'Inter-Regular.ttf', 400),
   font('Inter', 'Inter-Bold.ttf', 700),
   font('Unbounded', 'Unbounded-SemiBold.ttf', 600),
+  font('Unbounded', 'Unbounded-Light.ttf', 300),
+  font('Sora', 'Sora-Light.ttf', 300),
+  font('Sora', 'Sora-Regular.ttf', 400),
 ];
 
 // Tiny hyperscript helper so the layout reads like markup without a JSX build step.
-const h = (type, style, ...children) => ({ type, props: { style, children: children.flat() } });
+export const h = (type, style, ...children) => ({ type, props: { style, children: children.flat() } });
 
 
 /** Template layout (badge, header band, "W tym wydaniu:", 3 lead cards) over the background, branded per newsletter. */

@@ -64,3 +64,18 @@ The Meta token's data access must be re-confirmed every 90 days; after regenerat
   chars. The first argument picks the brand colours, the logo and the Instagram account. The Story is
   rendered to `stories/custom/` (gitignored), uploaded with the aws CLI to S3 (`STORIES_S3_BUCKET`,
   served at `STORIES_CDN_BASE`), then published. Nothing is committed.
+
+- **Carousel from long-form content** — 5 slides (hook, problem, solution, deepening, call to action) with a
+  procedurally generated background that's different every time:
+
+  ```bash
+  DRY_RUN=1 npm run carousel -- przeprogramowani https://example.com/article   # write the copy and render a preview
+  DRY_RUN=1 RESEED=1 npm run carousel -- przeprogramowani stories/carousels/<dir>  # new background, same copy (free)
+  npm run carousel -- przeprogramowani stories/carousels/<dir>                 # upload and create the unpublished draft
+  node src/cli.mjs carousel-publish przeprogramowani stories/carousels/<dir>   # post it publicly
+  ```
+
+  The source can be a URL, a text, Markdown or HTML file, `clipboard`, `-` (stdin) or the text itself. To change
+  the copy, edit `draft.json` in the draft's directory and render again. Instagram's API has no real drafts: the
+  unpublished container isn't visible in the app and expires after 24 hours, and `carousel-publish` recreates it
+  from the uploaded images if needed.
