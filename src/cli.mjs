@@ -7,14 +7,15 @@
 //   node src/cli.mjs reel <newsletter> <video> "<caption>" [cover image]
 //                                                 → checks/remuxes the video, uploads it to S3, posts it as a Reel
 //   node src/cli.mjs carousel <newsletter> <url|file|clipboard|-|text|draft dir>
-//                                                 → 5 slides from long-form content, uploaded to S3 as an unpublished IG container
+//                                                 → 5-slide Reel from long-form content, uploaded to S3 as an unpublished IG container
+//   node src/cli.mjs audio <newsletter> [query]   → lists trending music, or searches it, for AUDIO=<id>
 //   node src/cli.mjs carousel-publish <newsletter> <draft dir>
 //                                                 → publishes that draft (recreates the container if it expired)
-// Env: FORCE=1 regenerates even if the latest issue already had a Story. DRY_RUN=1 makes `custom` and `carousel` render only and `reel` prepare only. RESEED=1 gives a carousel draft new artwork.
+// Env: FORCE=1 regenerates even if the latest issue already had a Story. DRY_RUN=1 makes `custom` and `carousel` render only and `reel` prepare only. RESEED=1 gives a carousel draft new artwork. AUDIO=<id> sets its track.
 import { existsSync, readFileSync, writeFileSync, mkdirSync, appendFileSync } from 'node:fs';
 import { getNewsletter } from './newsletters.mjs';
 import { renderStory } from './image.mjs';
-import { publishStory, publishReel, permalink } from './instagram.mjs';
+import { publishStory, publishReel, permalink, searchAudio } from './instagram.mjs';
 import { prepareReel, prepareCover } from './reel.mjs';
 import { renderCustom, saveClipboardImage } from './custom.mjs';
 import { hostOnS3 } from './hosting.mjs';
@@ -115,17 +116,24 @@ async function carousel(nl, source) {
   const draft = await rerenderCarousel(dir, nl);
   console.log(`[${nl.key}] Draft ${dir} (world: ${draft.world}, seed: ${draft.seed})`);
   for (const f of draft.images) console.log(`Wrote ${f}`);
+  console.log(`Wrote ${draft.video} (${draft.durationS} s, silent until the track is attached)`);
+  console.log(`Track: ${draft.audio ? `${draft.audio.artist} - ${draft.audio.title} ${draft.audio.preview ?? ''}` : 'none yet'}`);
   console.log(`Caption:\n${draft.caption}`);
   if (process.env.DRY_RUN) return;
   const { containerId } = await submitCarousel(dir, nl);
-  console.log(`[${nl.key}] Draft container ${containerId} is ready and NOT published. It expires in 24 h and isn't visible in the Instagram app.`);
+  console.log(`[${nl.key}] Draft Reel container ${containerId} is ready and NOT published. It expires in 24 h and isn't visible in the Instagram app.`);
   console.log(`Publish: node src/cli.mjs carousel-publish ${nl.key} ${dir}`);
+}
+
+/** Tracks that can be attached through the API: trending ones without a query. */
+async function audio(nl, query) {
+  for (const t of await searchAudio(query, nl.instagramUserIdEnv)) console.log(`${t.audio_id}  ${Math.round(t.duration_in_ms / 1000)} s  ${t.display_artist} - ${t.title}  ${t.on_platform_audio_preview_link ?? `https://www.instagram.com/reels/audio/${t.audio_id}/`}`);
 }
 
 async function carouselPublish(nl, dir) {
   if (!dir) throw new Error('carousel-publish needs a draft directory');
   const mediaId = await publishCarousel(dir, nl);
-  console.log(`[${nl.key}] Published carousel ${mediaId} ${await permalink(mediaId).catch(() => '')}`);
+  console.log(`[${nl.key}] Published Reel ${mediaId} ${await permalink(mediaId).catch(() => '')}`);
 }
 
 const [cmd, key, arg, arg2, arg3] = process.argv.slice(2);
@@ -137,8 +145,9 @@ try {
   else if (cmd === 'custom') await custom(nl, arg, arg2);
   else if (cmd === 'reel') await reel(nl, arg, arg2, arg3);
   else if (cmd === 'carousel') await carousel(nl, arg);
+  else if (cmd === 'audio') await audio(nl, arg);
   else if (cmd === 'carousel-publish') await carouselPublish(nl, arg);
-  else throw new Error('Usage: node src/cli.mjs generate <newsletter> | upload <newsletter> | publish <newsletter> [url] | custom <newsletter> <image|clipboard> "<caption>" | reel <newsletter> <video> "<caption>" [cover] | carousel <newsletter> <source> | carousel-publish <newsletter> <draft dir>');
+  else throw new Error('Usage: node src/cli.mjs generate <newsletter> | upload <newsletter> | publish <newsletter> [url] | custom <newsletter> <image|clipboard> "<caption>" | reel <newsletter> <video> "<caption>" [cover] | carousel <newsletter> <source> | audio <newsletter> [query] | carousel-publish <newsletter> <draft dir>');
 } catch (e) {
   console.error(e instanceof Error ? e.message : e);
   process.exit(1);

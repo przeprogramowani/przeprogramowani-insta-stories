@@ -6,7 +6,7 @@ import { Resvg } from '@resvg/resvg-js';
 // in the draft: the same seed always gives the same pixels, a new one gives a different world.
 
 /** Slide canvas: 4:5 is the tallest ratio that is safe in a feed carousel. */
-export const SLIDE = { width: 1080, height: 1350 };
+export const SLIDE = { width: 1080, height: 1920 };
 
 const FIELD_SCALE = 3; // The soft nebula is computed at 1/3 size and upscaled; the crisp layers are vectors.
 

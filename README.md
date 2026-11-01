@@ -65,12 +65,15 @@ The Meta token's data access must be re-confirmed every 90 days; after regenerat
   rendered to `stories/custom/` (gitignored), uploaded with the aws CLI to S3 (`STORIES_S3_BUCKET`,
   served at `STORIES_CDN_BASE`), then published. Nothing is committed.
 
-- **Carousel from long-form content** — 5 slides (hook, problem, solution, deepening, call to action) with a
-  procedurally generated background that's different every time:
+- **Reel from long-form content** — 5 slides (hook, problem, solution, deepening, call to action) with a
+  procedurally generated background that's different every time, a track from Instagram's Audio API and a short
+  caption. Needs `ffmpeg`:
 
   ```bash
   DRY_RUN=1 npm run carousel -- przeprogramowani https://example.com/article   # write the copy and render a preview
   DRY_RUN=1 RESEED=1 npm run carousel -- przeprogramowani stories/carousels/<dir>  # new background, same copy (free)
+  node src/cli.mjs audio przeprogramowani                                      # list trending music (add a query to search)
+  DRY_RUN=1 AUDIO=<id> npm run carousel -- przeprogramowani stories/carousels/<dir>  # set the track
   npm run carousel -- przeprogramowani stories/carousels/<dir>                 # upload and create the unpublished draft
   node src/cli.mjs carousel-publish przeprogramowani stories/carousels/<dir>   # post it publicly
   ```
@@ -78,4 +81,5 @@ The Meta token's data access must be re-confirmed every 90 days; after regenerat
   The source can be a URL, a text, Markdown or HTML file, `clipboard`, `-` (stdin) or the text itself. To change
   the copy, edit `draft.json` in the draft's directory and render again. Instagram's API has no real drafts: the
   unpublished container isn't visible in the app and expires after 24 hours, and `carousel-publish` recreates it
-  from the uploaded images if needed.
+  from the uploaded video if needed. Instagram can't preview a Reel with attached audio, so the track is first heard
+  together with the video on the published Reel.

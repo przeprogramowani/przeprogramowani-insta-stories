@@ -39,22 +39,33 @@ async function waitUntilFinished(containerId, { attempts, intervalMs }) {
   }
 }
 
+/** Audio cleared for third-party use. Without a query Instagram returns what's trending. */
+export async function searchAudio(query, instagramUserIdEnv = 'INSTAGRAM_USER_ID') {
+  const params = { audio_type: 'music', user_id: required(instagramUserIdEnv) };
+  if (query) params.search_query = query;
+  return (await graph('GET', 'ig_audio', params)).audio ?? [];
+}
+
+/** Metadata of one audio asset. */
+export async function audioInfo(audioId, instagramUserIdEnv = 'INSTAGRAM_USER_ID') {
+  return graph('GET', audioId, { user_id: required(instagramUserIdEnv) });
+}
+
 /**
- * Create an unpublished carousel container from public JPEG URLs; returns its id. Nothing is visible on the
- * account. The Graph API has no real drafts: this container doesn't show up in the app's Drafts, and it
- * expires 24 hours after creation unless it's published with publishCarouselDraft().
+ * Create an unpublished Reel container with an audio track; returns its id. Nothing is visible on the account.
+ * The Graph API has no real drafts: this container doesn't show up in the app's Drafts, and it expires 24 hours
+ * after creation unless it's published with publishDraft().
  */
-export async function createCarouselDraft(imageUrls, caption, instagramUserIdEnv = 'INSTAGRAM_USER_ID') {
-  const igId = required(instagramUserIdEnv);
-  const wait = { attempts: 20, intervalMs: 3000 };
-  const children = [];
-  for (const image_url of imageUrls) {
-    const { id } = await graph('POST', `${igId}/media`, { image_url, is_carousel_item: 'true' });
-    await waitUntilFinished(id, wait);
-    children.push(id);
-  }
-  const { id } = await graph('POST', `${igId}/media`, { media_type: 'CAROUSEL', children: children.join(','), caption });
-  await waitUntilFinished(id, wait);
+export async function createReelDraft(videoUrl, caption, { audioId, coverUrl, instagramUserIdEnv = 'INSTAGRAM_USER_ID' }) {
+  const { id } = await graph('POST', `${required(instagramUserIdEnv)}/media`, {
+    media_type: 'REELS',
+    video_url: videoUrl,
+    cover_url: coverUrl,
+    caption,
+    share_to_feed: 'true',
+    audio_configuration: JSON.stringify({ audio_id: audioId, audio_volume: 100 }),
+  });
+  await waitUntilFinished(id, { attempts: 60, intervalMs: 10000 });
   return id;
 }
 
@@ -63,8 +74,8 @@ export async function containerStatus(containerId) {
   return (await graph('GET', containerId, { fields: 'status_code' })).status_code;
 }
 
-/** Publish a container from createCarouselDraft(); this is the public step. Returns the media id. */
-export async function publishCarouselDraft(containerId, instagramUserIdEnv = 'INSTAGRAM_USER_ID') {
+/** Publish a container from createReelDraft(); this is the public step. Returns the media id. */
+export async function publishDraft(containerId, instagramUserIdEnv = 'INSTAGRAM_USER_ID') {
   return (await graph('POST', `${required(instagramUserIdEnv)}/media_publish`, { creation_id: containerId })).id;
 }
 

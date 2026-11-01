@@ -4,8 +4,12 @@ import sharp from 'sharp';
 import { FONTS, h } from './layout.mjs';
 import { SLIDE } from './procgen.mjs';
 
+// Reels UI: account and caption at the bottom, buttons on the right, tabs at the top.
 const MARGIN = 88;
-const TEXT_WIDTH = SLIDE.width - MARGIN * 2;
+const MARGIN_RIGHT = 150;
+const SAFE_TOP = 230;
+const SAFE_BOTTOM = 400;
+const TEXT_WIDTH = SLIDE.width - MARGIN - MARGIN_RIGHT;
 const ORANGE = '#ff7a1a';
 const BODY = '#dfe3f7';
 const KICKERS = { problem: 'PROBLEM', solution: 'ROZWIĄZANIE', deepening: 'GŁĘBIEJ', cta: 'TWÓJ RUCH' };
@@ -35,11 +39,6 @@ export function fitTitle(title, sizes, maxLines) {
   return Math.min(sizes[sizes.length - 1], Math.floor(TEXT_WIDTH / (longest * UNBOUNDED_EM)));
 }
 
-const svgImg = (svg, width, height, style = {}) => ({
-  type: 'img',
-  props: { src: `data:image/svg+xml;base64,${Buffer.from(svg).toString('base64')}`, width, height, style },
-});
-
 const pngImg = ({ png, width, height }, style = {}) => ({
   type: 'img',
   props: { src: `data:image/png;base64,${png.toString('base64')}`, width, height, style },
@@ -61,13 +60,10 @@ const header = (index, total, logo) =>
 const footer = (index, total) =>
   h(
     'div',
-    { position: 'absolute', left: MARGIN, right: MARGIN, bottom: 72, display: 'flex', alignItems: 'center', gap: 10 },
+    { position: 'absolute', left: MARGIN, right: MARGIN_RIGHT, bottom: SAFE_BOTTOM - 60, display: 'flex', alignItems: 'center', gap: 10 },
     ...Array.from({ length: total }, (_, i) =>
       h('div', { flexGrow: 1, height: 4, borderRadius: 2, background: i === index ? ORANGE : i < index ? 'rgba(255,255,255,0.7)' : 'rgba(255,255,255,0.22)' }),
     ),
-    ...(index < total - 1
-      ? [svgImg(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 28"><path d="M0 14H60M48 2L60 14L48 26" fill="none" stroke="${ORANGE}" stroke-width="3"/></svg>`, 64, 28, { marginLeft: 18 })]
-      : []),
   );
 
 const kicker = (text) =>
@@ -141,14 +137,14 @@ function content(slide, url) {
 export function slideTree(slide, index, total, brand, logo) {
   return h(
     'div',
-    { width: SLIDE.width, height: SLIDE.height, boxSizing: 'border-box', display: 'flex', flexDirection: 'column', position: 'relative', padding: `76px ${MARGIN}px 130px`, backgroundImage: 'linear-gradient(180deg, rgba(5,7,28,0.62) 0%, rgba(5,7,28,0.58) 68%, rgba(5,7,28,0.2) 100%)' },
+    { width: SLIDE.width, height: SLIDE.height, boxSizing: 'border-box', display: 'flex', flexDirection: 'column', position: 'relative', padding: `${SAFE_TOP}px ${MARGIN_RIGHT}px ${SAFE_BOTTOM}px ${MARGIN}px`, backgroundImage: 'linear-gradient(180deg, rgba(5,7,28,0.62) 0%, rgba(5,7,28,0.58) 72%, rgba(5,7,28,0.2) 100%)' },
     header(index, total, logo),
     ...content(slide, brand.url),
     footer(index, total),
   );
 }
 
-/** One slide: text overlay composited over its background tile → 1080×1350 JPEG (Instagram only takes JPEG). */
+/** One slide: text overlay composited over its background tile → 1080×1920 JPEG. */
 export async function composeSlide(backgroundPng, slide, index, total, brand, logo) {
   const svg = await satori(slideTree(slide, index, total, brand, logo), { width: SLIDE.width, height: SLIDE.height, fonts: FONTS });
   const overlay = new Resvg(svg, { fitTo: { mode: 'width', value: SLIDE.width } }).render().asPng();

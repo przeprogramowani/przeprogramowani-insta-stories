@@ -78,6 +78,11 @@ Same command without `DRY_RUN`. Instagram processes the video for up to a few mi
 to 10 min). Run it with a Bash timeout of 600000 ms. Success ends with
 `[przeprogramowani] Published Reel <mediaId> <permalink>` — report both.
 
+If the video's folder has a `status.json` (`{ account, reels: [{ file, status, caption, … }] }`), update the
+entry for that file: set `status: "published"` and the final `caption`, `mediaId`, `permalink` and
+`publishedAt` (date). Add an entry if the file isn't listed. When the user asks what's left, list the
+`waiting` entries.
+
 ## Failures
 
 | Message | Meaning / action |
