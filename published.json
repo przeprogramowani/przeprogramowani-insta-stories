@@ -62,6 +62,27 @@
       ],
       "mediaId": "17917729551263976",
       "at": "2026-10-25T13:06:58.791Z"
+    },
+    {
+      "id": "https://przeprogramowani.substack.com/p/determinacja-wygrywa-z-doswiadczeniem",
+      "title": "🤓 Determinacja wygrywa z doświadczeniem: rady dla juniorów w czasach AI",
+      "url": "https://images.przeprogramowani.pl/insta-stories/przeprogramowani/2026-11-01-determinacja-wygrywa-z-doswiadczeniem-rady-dla-ju-56ee67f3.jpg",
+      "leads": [
+        {
+          "title": "Juniorzy wygrywają determinacją",
+          "text": "Firmy rezygnują z zadań programistycznych, bo AI pisze kod szybciej. Liczą się myślenie produktowe, osąd inżynierski i wartość biznesowa."
+        },
+        {
+          "title": "Zespoły AI-Native i code review",
+          "text": "Code review to wąskie gardło, bo agenci piszą kod szybciej, niż człowiek go czyta. Anthropic, Google i Imprint testują nowe procesy."
+        },
+        {
+          "title": "tsrc: TypeScript na Rusta",
+          "text": "Cloudflare, VoidZero i Owner.com pokazują port TypeScriptu na Rusta: do 8x szybsze typy i 70% mniej pamięci."
+        }
+      ],
+      "mediaId": "18200330356387032",
+      "at": "2026-11-01T14:54:32.845Z"
     }
   ],
   "opanuj-ai": [
