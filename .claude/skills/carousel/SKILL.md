@@ -61,7 +61,7 @@ directory to keep hand edits. **Read all 5 JPEGs** and check that:
 ## 4. Review and correct the text
 
 The generator already runs a no-ai-slop pass, but it can still drift from the source or flatten the copy. Before showing
-anything to the user, invoke the `no-ai-slop` skill yourself on all the slide copy and the caption, then:
+anything to the user, read `no-ai-slop/SKILL.md` and `no-ai-slop/eval.md` in this skill's directory (a link to the vendored skill, so there is one copy to update) and the Polish patterns in `POLISH_SLOP_PATTERNS` in `src/copyedit.mjs`. This step needs no separate skill call. Apply them to all the slide copy and the caption:
 
 1. **Review:** use its Detect job first. Name each pattern, quote the line and compare the claim with the source.
 2. **Correct:** use its Edit job, with the minimum effective edit, and write the fixes to `<dir>/draft.json`. Also fix spelling, grammar and Polish typography.
