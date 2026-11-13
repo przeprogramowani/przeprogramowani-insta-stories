@@ -73,7 +73,7 @@ export async function composeStory(backgroundPng, leads, brand) {
 }
 
 /** Ad-hoc Story: the brand logo (if any), the thumbnail as a card over its own blurred copy, and a caption panel below it. */
-export function customTree(backgroundPng, thumb, caption, brand, logo) {
+export function customTree(backgroundPng, thumb, caption, brand, logo, tilt = 0) {
   const BORDER = `1.5px solid ${brand.accent}`;
   const bg = `data:image/png;base64,${backgroundPng.toString('base64')}`;
   // Fit the thumbnail into 960×900 so the caption still fits inside Instagram's safe zone.
@@ -101,13 +101,13 @@ export function customTree(backgroundPng, thumb, caption, brand, logo) {
     },
     h(
       'div',
-      { marginTop: 48, alignSelf: 'stretch', display: 'flex', justifyContent: 'center', padding: '32px 40px 36px', borderRadius: 20, background: brand.panel, border: BORDER, textAlign: 'center', whiteSpace: 'pre-wrap', fontFamily: 'Unbounded', fontWeight: 600, fontSize, lineHeight: 1.3 },
+      { marginTop: 48, alignSelf: 'stretch', display: 'flex', justifyContent: 'center', padding: '32px 40px 36px', borderRadius: 20, background: brand.panel, border: BORDER, textAlign: 'center', whiteSpace: 'pre-wrap', fontFamily: 'Unbounded', fontWeight: 600, fontSize, lineHeight: 1.3, ...(tilt ? { transform: `rotate(${tilt}deg)` } : {}) },
       caption,
     ),
   );
 }
 
-export async function composeCustom(backgroundPng, thumb, caption, brand, logo) {
-  const svg = await satori(customTree(backgroundPng, thumb, caption, brand, logo), { width: STORY.width, height: STORY.height, fonts: FONTS });
+export async function composeCustom(backgroundPng, thumb, caption, brand, logo, tilt) {
+  const svg = await satori(customTree(backgroundPng, thumb, caption, brand, logo, tilt), { width: STORY.width, height: STORY.height, fonts: FONTS });
   return new Resvg(svg, { fitTo: { mode: 'width', value: STORY.width } }).render().asPng();
 }

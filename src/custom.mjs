@@ -38,8 +38,11 @@ export async function saveClipboardImage() {
   return file;
 }
 
-/** Ad-hoc Story from a thumbnail (local path or http URL) and a caption → 1080x1920 JPEG. No AI calls. */
-export async function renderCustom(input, caption, brand) {
+/**
+ * Ad-hoc Story from a thumbnail (local path or http URL) and a caption → 1080x1920 JPEG. No AI calls.
+ * `tilt` rotates the caption panel by that many degrees, like a loose handwritten note.
+ */
+export async function renderCustom(input, caption, brand, tilt = 0) {
   const raw = /^https?:\/\//.test(input)
     ? Buffer.from(await (await fetch(input)).arrayBuffer())
     : readFileSync(input);
@@ -54,6 +57,6 @@ export async function renderCustom(input, caption, brand) {
     .toBuffer();
   // Resize once with Lanczos (the Przeprogramowani wordmark is only 313×46) rather than letting resvg stretch it.
   const logo = brand.logo && (await sharp(brand.logo).resize({ height: brand.logoHeight ?? LOGO_HEIGHT, kernel: 'lanczos3' }).png().toBuffer({ resolveWithObject: true }));
-  const story = await composeCustom(background, { png, width, height }, caption, brand, logo && { png: logo.data, width: logo.info.width, height: logo.info.height });
+  const story = await composeCustom(background, { png, width, height }, caption, brand, logo && { png: logo.data, width: logo.info.width, height: logo.info.height }, tilt);
   return sharp(story).jpeg({ quality: 92 }).toBuffer();
 }

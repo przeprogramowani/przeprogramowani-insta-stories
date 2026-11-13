@@ -22,6 +22,7 @@ approves that preview in this conversation.
 | `newsletter` | `przeprogramowani` (red, default) or `opanuj-ai` (blue). Picks the colours and the IG account. Ask only if the context doesn't make it clear. |
 | `image` | Local path (make it absolute), an `https://` URL, or the literal `clipboard` when the user says the image is in the clipboard / "skopiowane" / "w schowku". Any format `sharp` reads (JPEG, PNG, WebP…). For YouTube thumbnails, `https://i.ytimg.com/vi/<id>/maxresdefault.jpg` works. |
 | `caption` | Polish unless the user says otherwise, ≤280 chars; 50–120 reads best. `\n` breaks the line. Use the user's wording as-is. If they ask you to write it, draft one and get their OK before rendering. |
+| `TILT` (env, optional) | Degrees to rotate the caption panel, e.g. `TILT=-3` for a loose handwritten-note look. Use it when the user asks for tilted/rotated text, and pass the same value in the dry run and the real run. |
 
 ## 2. Preflight
 

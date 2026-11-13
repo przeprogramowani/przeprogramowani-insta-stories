@@ -81,7 +81,7 @@ async function custom(nl, image, caption) {
     console.log(`Clipboard image saved to ${image} (pass this path when posting)`);
   }
   const file = `stories/custom/${new Date().toISOString().slice(0, 10)}-${slug(caption)}.jpg`;
-  writeFileSync(file, await renderCustom(image, caption, nl.brand));
+  writeFileSync(file, await renderCustom(image, caption, nl.brand, Number(process.env.TILT) || 0));
   console.log(`Wrote ${file}`);
   if (process.env.DRY_RUN) return;
   const url = await hostOnS3(file);
