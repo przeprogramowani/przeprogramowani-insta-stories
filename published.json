@@ -83,6 +83,27 @@
       ],
       "mediaId": "18200330356387032",
       "at": "2026-11-01T14:54:32.845Z"
+    },
+    {
+      "id": "https://przeprogramowani.substack.com/p/ai-nie-zastepuje-myslenia-na-szczescie",
+      "title": "🧑🏻‍💻 AI nie zastępuje myślenia (na szczęście)",
+      "url": "https://images.przeprogramowani.pl/insta-stories/przeprogramowani/2026-11-15-ai-nie-zastepuje-myslenia-na-szczescie-5a381c5a.jpg",
+      "leads": [
+        {
+          "title": "Wydatki na tokeny a produktywność",
+          "text": "W badaniu 404 programistów podwojenie wydatków na tokeny słabo wiązało się ze wzrostem liczby commitów."
+        },
+        {
+          "title": "Błędna metodologia skraca życie kodu",
+          "text": "W 32,5 mln linii TypeScripta mylenie modyfikacji z usunięciem skraca szacowany czas życia kodu z 3,0 do 1,3 roku."
+        },
+        {
+          "title": "Gemini znów na prowadzeniu",
+          "text": "W CursorBench Gemini 4 Carbon ma najlepszy wynik wśród agentów do programowania, a zadania kosztują 3x mniej niż z Fable 5.2."
+        }
+      ],
+      "mediaId": "18138670981656334",
+      "at": "2026-11-15T15:31:54.669Z"
     }
   ],
   "opanuj-ai": [
